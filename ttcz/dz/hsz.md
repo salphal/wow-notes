@@ -8,27 +8,38 @@
 
 
 #showtooltip 毁伤
--- 切换武器
-/equipslot 16 毁灭之刃
-/equipslot 17 血腥撕裂者
-/cast 毁伤
-/startattack  -- 确保攻击
+/stopcasting
+/use [@player,combat] 10
+/cast [@focus,exists,harm,nodead][@mouseover,exists,harm,nodead][harm,nodead] 毁伤
+/startattack
 
 
 ```
 
-### 刀扇
+### 冷血 + 毒伤
 
 ```text
 
 
-#showtooltip
--- 切换武器
-/equipslot 16 泰坦神铁法术之刃
-/equipslot 17 恶魔之击
-/wait 0.1  -- 装备切换的延迟
-/cast 刀扇
-/startattack  -- 确保攻击
+#showtooltip 冷血
+/stopcasting
+/cast 狮心  -- 狮心（人类种族天赋）
+/cast [@focus,exists,harm,nodead][@mouseover,exists,harm,nodead][harm,nodead] 冷血
+/cast [@focus,exists,harm,nodead][@mouseover,exists,harm,nodead][harm,nodead] 毒伤
+/startattack
+
+
+```
+
+## 血之饥渴 + 切割
+
+```text
+
+
+#showtooltip 血之饥渴
+/cast 血之饥渴
+/cast 切割
+/startattack
 
 
 ```

@@ -2,33 +2,64 @@
 
 ## 必备
 
-### 毁灭打击 + 顺劈砍
-
-T顺劈
+### T毁灭
 
 ```text
 
-
-#showtooltip 顺劈斩
-/startattack
-/cast 毁灭打击
-/cast 顺劈斩
+#showtooltip 毁灭打击
+/stopattack
+-- 没有目标 或 目标死亡 → 自动选最近敌人
+/targetenemy [noharm][dead]
+-- 优先级: -- 优先级: 鼠标指向 > 焦点 > 当前目标 > 自动最近敌人
+/cast [@mouseover,harm,nodead][@focus,harm,nodead][@target,harm,nodead] 毁灭打击                                         
 /startattack
 
 
 ```
 
-### 毁灭打击 + 英勇
+### T顺劈
 
-T英勇
+```text
+
+#showtooltip 顺劈斩
+/stopattack
+-- 没有目标 或 目标死亡 → 自动选最近敌人
+/targetenemy [noharm][dead]
+-- 优先级: -- 优先级: 鼠标指向 > 焦点 > 当前目标 > 自动最近敌人
+/cast [@mouseover,harm,nodead][@focus,harm,nodead][@target,harm,nodead] 顺劈斩                                         
+/startattack
+
+
+```
+
+### T顺劈
+
+```text
+
+#showtooltip 顺劈斩
+/stopattack
+-- 没有目标 或 目标死亡 → 自动选最近敌人
+/targetenemy [noharm][dead]
+-- 优先级: -- 优先级: 鼠标指向 > 焦点 > 当前目标 > 自动最近敌人
+/cast [@mouseover,harm,nodead][@focus,harm,nodead][@target,harm,nodead] 顺劈斩                                         
+/startattack
+
+
+```
+
+### T盾猛
+
+T盾猛
 
 ```text
 
 
-#showtooltip 英勇打击
-/startattack
-/cast 毁灭打击
-/cast 英勇打击
+#showtooltip 盾牌猛击
+/stopattack
+-- 没有目标 或 目标死亡 → 自动选最近敌人
+/targetenemy [noharm][dead]
+-- 优先级: -- 优先级: 焦点 > 鼠标指向 > 当前目标 > 自动最近敌人
+/cast [@focus,harm,nodead][@mouseover,harm,nodead][@target,harm,nodead] 盾牌猛击                                         
 /startattack
 
 
@@ -74,26 +105,19 @@ T投掷
 
 ## 冲锋 & 拦截 & 援护
 
-### 援护
-
-T援护
+### T援护
 
 ```text
 
 
 #showtooltip 援护
-/cast [@mouseover,help,nodead] 援护
-/cast [@mouseover,harm,nodead,@mouseovertarget,help] 援护
-/cast [@target,help,nodead] 援护
-/cast [@target,harm,nodead,@targettarget,help] 援护
-
+-- 优先级: 鼠标友方 > 鼠标敌人的目标 > 当前友方 > 当前敌人的目标
+/cast [@mouseover,help,nodead][@mouseovertarget,help,nodead][@target,help,nodead][@targettarget,help,nodead] 援护
 
 
 ```
 
-### 冲锋
-
-T冲锋
+### T冲锋
 
 ```text
 
@@ -104,12 +128,9 @@ T冲锋
 /startattack
 
 
-
 ```
 
-### 拦截
-
-T拦截
+### T拦截
 
 ```text
 
@@ -124,47 +145,44 @@ T拦截
 
 ## 群嘲 & 单嘲
 
-### 群嘲
-
-T群嘲
+### T群嘲
 
 ```text
 
 #showtooltip 挑战怒吼
+/stopattack
 /cast 挑战怒吼
 /startattack
 
 ```
 
-### 单嘲
-
-T单嘲
+### T单嘲
 
 ```text
 
 #showtooltip 惩戒痛击
+/stopattack
 -- 优先级: 鼠标指向 > 焦点 > 当前目标
 /cast [@mouseover,harm,nodead][@focus,harm,nodead][@target,harm,nodead] 惩戒痛击
 /startattack
 
 ```
 
-### 嘲讽
-
-T嘲讽
+### T嘲讽
 
 ```text
 
+
 #showtooltip 嘲讽
--- 优先级: 鼠标指向 > 焦点 > 当前目标
-/cast [@mouseover,harm,nodead][@focus,harm,nodead][@target,harm,nodead] 嘲讽
+/stopattack
+-- 优先级: 鼠标敌人 > 当前友方的敌方目标 > 当前目标
+/cast [@mouseover,harm,nodead][@targettarget,harm,nodead][@target,harm,nodead] 嘲讽
 /startattack
+
 
 ```
 
-### 缴械
-
-T缴械
+### T缴械
 
 ```text
 
@@ -179,9 +197,7 @@ T缴械
 
 ## 快速释放
 
-### 打断
-
-T打断
+### T打断
 
 ```text
 
@@ -192,30 +208,27 @@ T打断
 /startattack
 
 
-```
-
-### 盾牌猛击
-
-T盾猛
-
-```text
-
-
-#showtooltip 盾牌猛击
-/cast 盾牌猛击                                             
+#showtooltip 震荡猛击
+-- 优先级: 焦点 > 鼠标指向 > 当前目标
+/cast [@focus,harm,nodead][@mouseover,harm,nodead][@target,harm,nodead] 震荡猛击
 /startattack
 
 
+#showtooltip 盾击
+/startattack
+-- 优先级: 鼠标指向 > 焦点 > 当前目标
+/castsequence [@mouseover,harm,exists][@focus,harm,exists][] reset=10/combat 盾击, 震荡猛击
+
+
 ```
 
-### 反击风暴
-
-T反击
+### T反击
 
 ```text
 
 
 #showtooltip 反击风暴
+/stopattack
 /cast 战斗姿态
 /cast 反击风暴
 /cast 防御姿态
