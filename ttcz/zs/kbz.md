@@ -1,5 +1,8 @@
 # 狂暴战
 
+> 5% 命中
+> 26 精准
+
 | 技能    | 怒气 | CD |
 |-------|----|----|
 | `英勇`  | 12 | -- |
@@ -53,14 +56,12 @@
 
 ## 必备
 
-### 嗜血
-
-K嗜血
+### K嗜血
 
 ```text
 
 
-#showtooltip 嗜血
+#showtooltip
 /cast 嗜血
 /startattack
 /cancelaura 保护之手
@@ -69,9 +70,7 @@ K嗜血
 
 ```
 
-### 顺劈
-
-K顺劈
+### K顺劈
 
 ```text
 
@@ -85,9 +84,7 @@ K顺劈
 
 ```
 
-### 英勇打击
-
-K英勇
+### K英勇
 
 ```text
 
@@ -153,3 +150,22 @@ K盾墙
 
 
 ```
+
+
+## 爆发
+
+### 爆发
+
+```text
+
+
+#showtooltip 死亡之愿
+-- 优先级: 鼠标指向敌方 > 焦点敌方 > 当前目标敌方
+/stopcasting
+/cast [@mouseover,harm,nodead][@focus,harm,nodead][@target,harm,nodead] 死亡之愿
+/cast 碎裂投掷
+/startattack
+
+
+```
+

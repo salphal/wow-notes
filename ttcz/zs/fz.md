@@ -7,7 +7,6 @@
 ```text
 
 #showtooltip 毁灭打击
-/stopattack
 -- 没有目标 或 目标死亡 → 自动选最近敌人
 /targetenemy [noharm][dead]
 -- 优先级: -- 优先级: 鼠标指向 > 焦点 > 当前目标 > 自动最近敌人
@@ -22,22 +21,6 @@
 ```text
 
 #showtooltip 顺劈斩
-/stopattack
--- 没有目标 或 目标死亡 → 自动选最近敌人
-/targetenemy [noharm][dead]
--- 优先级: -- 优先级: 鼠标指向 > 焦点 > 当前目标 > 自动最近敌人
-/cast [@mouseover,harm,nodead][@focus,harm,nodead][@target,harm,nodead] 顺劈斩                                         
-/startattack
-
-
-```
-
-### T顺劈
-
-```text
-
-#showtooltip 顺劈斩
-/stopattack
 -- 没有目标 或 目标死亡 → 自动选最近敌人
 /targetenemy [noharm][dead]
 -- 优先级: -- 优先级: 鼠标指向 > 焦点 > 当前目标 > 自动最近敌人
@@ -55,7 +38,6 @@ T盾猛
 
 
 #showtooltip 盾牌猛击
-/stopattack
 -- 没有目标 或 目标死亡 → 自动选最近敌人
 /targetenemy [noharm][dead]
 -- 优先级: -- 优先级: 焦点 > 鼠标指向 > 当前目标 > 自动最近敌人
@@ -65,37 +47,35 @@ T盾猛
 
 ```
 
-### 雷霆一击 + 挫志怒吼
+### T雷挫
 
 ```text
 
 
-#showtooltip 雷霆一击
+#showtooltip
 /castsequence reset=6/combat 雷霆一击,挫志怒吼
 /startattack
 
 
 ```
 
-### 狂暴之怒 + 血性狂暴
+### T怒气
 
 ```text
 
 
-/showtooltip 狂暴之怒
+/showtooltip
 /castsequence reset=10/combat 狂暴之怒,血性狂暴
 
 
 ```
 
-### 英勇投掷 + 碎裂投掷
-
-T投掷
+### T投掷
 
 ```text
 
 
-/showtooltip 英勇投掷
+/showtooltip
 /castsequence reset=10/combat 英勇投掷,碎裂投掷
 
 
@@ -150,7 +130,6 @@ T投掷
 ```text
 
 #showtooltip 挑战怒吼
-/stopattack
 /cast 挑战怒吼
 /startattack
 
@@ -161,9 +140,8 @@ T投掷
 ```text
 
 #showtooltip 惩戒痛击
-/stopattack
--- 优先级: 鼠标指向 > 焦点 > 当前目标
-/cast [@mouseover,harm,nodead][@focus,harm,nodead][@target,harm,nodead] 惩戒痛击
+-- 优先级: 鼠标指向 > 当前目标
+/cast [@mouseover,harm,nodead][@target,harm,nodead] 惩戒痛击
 /startattack
 
 ```
@@ -174,7 +152,6 @@ T投掷
 
 
 #showtooltip 嘲讽
-/stopattack
 -- 优先级: 鼠标敌人 > 当前友方的敌方目标 > 当前目标
 /cast [@mouseover,harm,nodead][@targettarget,harm,nodead][@target,harm,nodead] 嘲讽
 /startattack
@@ -188,8 +165,8 @@ T投掷
 
 
 #showtooltip 缴械
--- 优先级: 鼠标指向 > 焦点 > 当前目标
-/cast [@mouseover,harm,nodead][@focus,harm,nodead][@target,harm,nodead] 缴械
+-- 优先级: 鼠标指向 > 当前目标
+/cast [@mouseover,harm,nodead][@target,harm,nodead] 缴械
 /startattack
 
 
@@ -214,10 +191,10 @@ T投掷
 /startattack
 
 
-#showtooltip 盾击
+#showtooltip
 /startattack
--- 优先级: 鼠标指向 > 焦点 > 当前目标
-/castsequence [@mouseover,harm,exists][@focus,harm,exists][] reset=10/combat 盾击, 震荡猛击
+-- 优先级: 鼠标指向 > 当前目标
+/castsequence [@mouseover,harm,exists][] reset=10/combat 盾击, 震荡猛击
 
 
 ```

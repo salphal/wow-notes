@@ -2,7 +2,7 @@
 
 ## 祷言
 
-### 愈合祷言
+### 祷言
 
 ```text
 
@@ -14,7 +14,7 @@
 
 ```
 
-### 绝望祷言
+### 圣疗
 
 ```text
 
@@ -47,7 +47,7 @@
 ```text
 
 
-#showtooltip 真言术：盾
+#showtooltip
 -- 优先级: 鼠标指向 > 焦点 > 自己
 /cast [@mouseover,help,nodead][@focus,help,nodead][@player] 真言术：盾
 
@@ -59,7 +59,7 @@
 ```text
 
 
-#showtooltip 强效治疗术
+#showtooltip
 -- 优先级: 鼠标指向 > 焦点 > 自己
 /cast [@mouseover,help,nodead][@focus,help,nodead][@player] 强效治疗术
 
@@ -71,9 +71,21 @@
 ```text
 
 
-#showtooltip 快速治疗
+#showtooltip
 -- 优先级: 鼠标指向 > 焦点 > 自己
 /cast [@mouseover,help,nodead][@focus,help,nodead][@player] 快速治疗
+
+
+```
+
+### 联结
+
+```text
+
+
+#showtooltip
+-- 优先级: 鼠标指向 > 焦点 > 自己
+/cast [@mouseover,help,nodead][@focus,help,nodead][@player] 联结治疗
 
 
 ```
@@ -83,7 +95,7 @@
 ```text
 
 
-#showtooltip 苦修
+#showtooltip
 -- 优先级: 鼠标指向 > 焦点 > 自己
 /cast [@mouseover,help,nodead][@focus,help,nodead][@player] 苦修
 
@@ -107,36 +119,35 @@
 
 ## 快速释放
 
-### 群体驱散
+### 群驱
 
 ```text
 
 
-#showtooltip 群体驱散
--- 优先级: 鼠标指向 > 焦点 > 自己
+#showtooltip
 /cast [@cursor]群体驱散
 
 
 ```
 
-### 痛苦压制
+### 压制
 
 ```text
 
 
-#showtooltip 痛苦压制
+#showtooltip
 -- 优先级: 鼠标指向 > 焦点 > 自己
 /cast [@mouseover,help,nodead][@focus,help,nodead][@player] 痛苦压制
 
 
 ```
 
-### 能量灌注
+### 灌注
 
 ```text
 
 
-#showtooltip 能量灌注
+#showtooltip
 -- 优先级: 鼠标指向 > 焦点 > 自己
 /cast [@mouseover,help,nodead][@focus,help,nodead][@player] 能量灌注
 
@@ -185,7 +196,7 @@
 ```text
 
 
-#showtooltip 防护恐惧结界
+#showtooltip
 -- 优先级: 鼠标指向 > 焦点 > 自己
 /cast [@mouseover,help,nodead][@focus,help,nodead][@player] 防护恐惧结界
 
@@ -199,6 +210,6 @@
 #showtooltip 坚韧祷言
 -- 优先级: 鼠标指向 > 焦点 > 自己
 /castsequence reset=5/combat 心灵之火,坚韧祷言,精神祷言
-提示
+
 
 ```
