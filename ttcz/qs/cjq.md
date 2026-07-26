@@ -17,6 +17,11 @@
 /cast 清算之手
 /USE 10
 
+#showtooltip 智慧审判
+/startattack
+/cast 智慧审判
+/USE 10
+
 
 ```
 
@@ -28,6 +33,11 @@
 /startattack
 /cast 十字军打击
 /cast 清算之手
+/USE 10
+
+#showtooltip 十字军打击
+/startattack
+/cast 十字军打击
 /USE 10
 
 
@@ -45,6 +55,11 @@
 /cast 清算之手
 /USE 10
 
+#showtooltip 神圣风暴
+/startattack
+/cast 神圣风暴
+/USE 10
+
 
 ```
 
@@ -56,6 +71,11 @@
 /startattack
 /cast 驱邪术
 /cast 清算之手
+/USE 10
+
+#showtooltip 驱邪术
+/startattack
+/cast 驱邪术
 /USE 10
 
 
@@ -96,6 +116,11 @@
 #showtooltip 圣光闪现
 -- 优先级: 焦点 > 目标 > 自己sdw
 /cast [@focus,help,nodead][@target,help,nodead][@player] 圣光闪现
+
+#showtooltip
+-- 优先级: 鼠标指向 > 焦点 > 当前友方目标 > 自己
+/cast [@mouseover,help,nodead][@focus,help,nodead][@target,help,nodead][@player] 圣光闪现
+/startattack
 
 
 ```

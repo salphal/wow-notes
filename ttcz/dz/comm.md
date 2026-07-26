@@ -100,32 +100,41 @@
 
 ```text
 
+D致命
 
-#showtooltip 毁灭之刃
+#showtooltip 玛尔沃罗斯，污染者碎片
 -- 主手: 致命药膏 IX
 /use item:43233
 /use 16
 
 
-#showtooltip 毁灭之刃
+D速效
+
+#showtooltip 玛尔沃罗斯，污染者碎片
 -- 主手: 速效药膏 IX
 /use item:43231
 /use 16
 
 
-#showtooltip 熔火犬牙
+D速效
+
+#showtooltip 雷霆之怒，逐风者的祝福之剑
 -- 副手: 速效药膏 IX
 /use item:43231
 /use 17
 
 
-#showtooltip 熔火犬牙
+D减速
+
+#showtooltip 雷霆之怒，逐风者的祝福之剑
 -- 副手: 减速药膏
 /use item:43233
 /use 17
 
 
-#showtooltip 熔火犬牙
+D麻痹
+
+#showtooltip 雷霆之怒，逐风者的祝福之剑
 -- 副手: 麻痹药膏
 /use item:43232
 /use 17

@@ -22,8 +22,7 @@
 
 #showtooltip 战斗姿态
 /cast 战斗姿态
-/equipslot 16 雷霆
-/equipslot 17
+/equipslot 16 萨弗拉斯，炎魔拉格纳罗斯之手
 
 
 ```
@@ -33,23 +32,23 @@
 ```text
 
 
-#showtooltip 狂暴姿态
+#showtooltip 
 /cast 狂暴姿态
-/equipslot 16 雷霆
-/equipslot 17 萨弗拉斯, 炎魔拉格纳罗斯之手
+/equipslot 16 萨弗拉斯，炎魔拉格纳罗斯之手
+/equipslot 17 雷霆
 
 
 ```
 
-### 武器
+### 防御
 
 
 ```text
 
-#showtooltip 防御姿态
+#showtooltip 
 /cast 防御姿态
-/equipslot 16 勇气红剑
-/equipslot 17 钻孔虫之碟
+/equipslot 16 雷霆之怒，逐风者的祝福之剑
+/equipslot 17 死亡的面孔
 
 
 ```
@@ -98,9 +97,7 @@
 
 ```
 
-### 旋风斩
-
-K旋风斩
+### K旋风
 
 ```text
 
@@ -114,9 +111,7 @@ K旋风斩
 
 ```
 
-### 猛击
-
-K猛击
+### K猛击
 
 ```text
 
@@ -132,9 +127,7 @@ K猛击
 
 ---
 
-### 盾墙
-
-K盾墙
+### K盾墙
 
 ```text
 
@@ -143,10 +136,11 @@ K盾墙
 -- 切防御姿态
 /cast [nostance:2] 防御姿态
 -- 装备单手+盾牌
-/equipslot 16 勇气红剑
-/equipslot 17 钻孔虫之碟
+/equipslot 16 雷霆之怒,逐风者的祝福之剑
+/equipslot 17 死亡的面孔
 -- 开启盾墙
 /cast 盾墙
+
 
 
 ```
@@ -159,11 +153,24 @@ K盾墙
 ```text
 
 
-#showtooltip 死亡之愿
--- 优先级: 鼠标指向敌方 > 焦点敌方 > 当前目标敌方
-/stopcasting
-/cast [@mouseover,harm,nodead][@focus,harm,nodead][@target,harm,nodead] 死亡之愿
-/cast 碎裂投掷
+#showtooltip
+/cancelaura 保护之手
+/cast 死亡之愿
+/use 10
+/startattack
+
+
+#showtooltip
+/cancelaura 保护之手
+/cast 鲁莽
+/use 10
+/startattack
+
+
+#showtooltip
+/cancelaura 保护之手
+/cast 狮心
+/use 10
 /startattack
 
 

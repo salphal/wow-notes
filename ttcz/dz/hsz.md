@@ -7,7 +7,7 @@
 ```text
 
 
-#showtooltip 毁伤
+#showtooltip
 /stopcasting
 /use [@player,combat] 10
 /cast [@focus,exists,harm,nodead][@mouseover,exists,harm,nodead][harm,nodead] 毁伤
