@@ -1,4 +1,24 @@
+### 姿态
 
+```text
+
+#showtooltip 
+/cast 战斗姿态
+/equipslot 16 雷霆之怒，逐风者的祝福之剑
+/equipslot 17 水晶锻铸先锋盾
+
+#showtooltip 
+/cast 防御姿态
+/equipslot 16 雷霆之怒，逐风者的祝福之剑
+/equipslot 17 水晶锻铸先锋盾
+
+#showtooltip 
+/cast 防御姿态
+/equipslot 16 雷霆之怒，逐风者的祝福之剑
+/equipslot 17 水晶锻铸先锋盾
+
+
+```
 
 ### 打断
 
