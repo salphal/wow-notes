@@ -389,6 +389,7 @@ local function ParseCodeFile(content)
 end
 
 --- 从 output 目录重建 WA 导入字符串
+--- 以 output/ 目录中的 .lua 文件为准：新增文件自动加入、删除文件自动移除、修改文件回写
 --- @param outDir string 解析输出目录（含 raw/transmit.bin 和各职业 .lua）
 --- @return string? importString, string? err
 local function BuildStringFromOutput(outDir)
@@ -406,41 +407,209 @@ local function BuildStringFromOutput(outDir)
     return nil, "raw/transmit.bin 损坏，请重新解析"
   end
 
-  -- 2. 遍历所有 aura，用修改后的代码覆盖
-  local modifiedCount = 0
-  local missingFiles = {}
-  TraverseAuras(transmit, function(data)
-    if not (data and data.id) then return end
-    local fileName = SafeFileName(data.id) .. ".lua"
-    local filePath = outDir .. "/" .. fileName
-    local f = io.open(filePath, "rb")
-    if not f then
-      table.insert(missingFiles, fileName)
-      return
+  -- 2. 收集现有 aura 映射（id → data）与 children 容器
+  local auraMap = {}
+  local mainData = transmit.d or transmit
+  local children = transmit.c or {}
+  if mainData and type(mainData) == "table" and mainData.id then
+    auraMap[mainData.id] = mainData
+  end
+  for _, child in ipairs(children) do
+    if child and type(child) == "table" and child.id then
+      auraMap[child.id] = child
     end
-    local content = f:read("*a")
-    f:close()
+  end
 
-    local blocks = ParseCodeFile(content)
-    local aura = ExtractAuraCode(data)
-    for _, code in ipairs(aura.codes) do
-      local newCode = blocks[code.name]
-      if newCode ~= nil and newCode ~= code.code then
-        SetValueByPath(data, code.path, newCode)
-        modifiedCount = modifiedCount + 1
+  -- 3. 模板：找第一个 regionType=empty 的现有 aura（新增文件克隆它获得完整默认结构）
+  local template
+  for _, child in ipairs(children) do
+    if child and child.regionType == "empty" then
+      template = child
+      break
+    end
+  end
+  if not template and mainData and mainData.regionType == "empty" then
+    template = mainData
+  end
+
+  -- 生成 11 位 base64 uid（与 WeakAuras.GenerateUniqueID 一致）
+  local b64chars = {}
+  for i = 1, 64 do b64chars[i] = string.char(0) end
+  for i = 1, 26 do b64chars[i] = string.char(96 + i) end      -- a-z
+  for i = 27, 52 do b64chars[i] = string.char(38 + i) end     -- A-Z
+  for i = 53, 62 do b64chars[i] = string.char(47 + i) end     -- 0-9
+  b64chars[63] = "("
+  b64chars[64] = ")"
+  local function GenerateUID()
+    local s = {}
+    for i = 1, 11 do
+      s[i] = b64chars[math.random(1, 64)]
+    end
+    return table.concat(s)
+  end
+
+  -- 深拷贝（新增 aura 从模板克隆）
+  local function DeepCopy(v, seen)
+    if type(v) ~= "table" then return v end
+    seen = seen or {}
+    if seen[v] then return seen[v] end
+    local out = {}
+    seen[v] = out
+    for k, val in pairs(v) do
+      out[k] = DeepCopy(val, seen)
+    end
+    return out
+  end
+
+  -- 从代码块构建/更新 data 的字段（反向映射：块名 → data 结构）
+  local function ApplyBlocksToData(data, blocks)
+    for name, code in pairs(blocks) do
+      if code == "" then code = nil end
+      local n = tonumber(name:match("^trigger (%d+) 自定义触发器$"))
+      if n then
+        data.triggers = data.triggers or {}
+        data.triggers[n] = data.triggers[n] or {}
+        data.triggers[n].trigger = data.triggers[n].trigger or {}
+        data.triggers[n].trigger.type = "custom"
+        data.triggers[n].trigger.custom_type = data.triggers[n].trigger.custom_type or "stateupdate"
+        data.triggers[n].trigger.custom = code
+      elseif name:match("^trigger %d+ 自定义取消触发$") then
+        local tn = tonumber(name:match("^trigger (%d+) 自定义取消触发$"))
+        data.triggers = data.triggers or {}
+        data.triggers[tn] = data.triggers[tn] or {}
+        data.triggers[tn].untrigger = data.triggers[tn].untrigger or {}
+        data.triggers[tn].untrigger.custom = code
+      elseif name:match("^trigger %d+ 自定义持续时间$") then
+        local tn = tonumber(name:match("^trigger (%d+) 自定义持续时间$"))
+        data.triggers = data.triggers or {}
+        data.triggers[tn] = data.triggers[tn] or {}
+        data.triggers[tn].trigger = data.triggers[tn].trigger or {}
+        data.triggers[tn].trigger.customDuration = code
+      elseif name:match("^trigger %d+ 自定义名称$") then
+        local tn = tonumber(name:match("^trigger (%d+) 自定义名称$"))
+        data.triggers = data.triggers or {}
+        data.triggers[tn] = data.triggers[tn] or {}
+        data.triggers[tn].trigger = data.triggers[tn].trigger or {}
+        data.triggers[tn].trigger.customName = code
+      elseif name:match("^trigger %d+ 自定义图标$") then
+        local tn = tonumber(name:match("^trigger (%d+) 自定义图标$"))
+        data.triggers = data.triggers or {}
+        data.triggers[tn] = data.triggers[tn] or {}
+        data.triggers[tn].trigger = data.triggers[tn].trigger or {}
+        data.triggers[tn].trigger.customIcon = code
+      elseif name:match("^actions%.(init|start|finish) 自定义代码$") then
+        local an = name:match("^actions%.(init|start|finish) 自定义代码$")
+        data.actions = data.actions or {}
+        data.actions[an] = data.actions[an] or {}
+        data.actions[an].do_custom = true
+        data.actions[an].custom = code
+      elseif name:match("^actions%.(init|start|finish) 自定义消息$") then
+        local an = name:match("^actions%.(init|start|finish) 自定义消息$")
+        data.actions = data.actions or {}
+        data.actions[an] = data.actions[an] or {}
+        data.actions[an].do_message = true
+        data.actions[an].message_custom = code
+      elseif name == "actions.init 加载时自定义代码" then
+        data.actions = data.actions or {}
+        data.actions.init = data.actions.init or {}
+        data.actions.init.do_custom_load = true
+        data.actions.init.customOnLoad = code
+      elseif name == "actions.init 卸载时自定义代码" then
+        data.actions = data.actions or {}
+        data.actions.init = data.actions.init or {}
+        data.actions.init.do_custom_unload = true
+        data.actions.init.customOnUnload = code
+      elseif name:match("^自定义文本 (.+)$") then
+        local tn = name:match("^自定义文本 (.+)$")
+        data.customTexts = data.customTexts or {}
+        data.customTexts[tn] = data.customTexts[tn] or {}
+        data.customTexts[tn].formattedText = code
       end
     end
-  end)
+  end
 
-  -- 3. 编码回导入字符串
+  -- 4. 以 output/ 文件为准遍历：修改回写 + 新增加入
+  local modifiedCount = 0
+  local addedCount = 0
+  local removedCount = 0
+  local seenIds = {}
+  local p = io.popen(string.format('ls "%s"/*.lua 2>/dev/null', outDir))
+  if p then
+    for line in p:lines() do
+      local filePath = line:gsub("%s+$", "")
+      local fileName = filePath:match("([^/\\]+)%.lua$")
+      if fileName then
+        local f = io.open(filePath, "rb")
+        if not f then return nil, "无法读取 " .. filePath end
+        local content = f:read("*a")
+        f:close()
+
+        local blocks = ParseCodeFile(content)
+        local data = auraMap[fileName]
+        if data then
+          -- 已有 aura：回写修改
+          local aura = ExtractAuraCode(data)
+          for _, code in ipairs(aura.codes) do
+            local newCode = blocks[code.name]
+            if newCode ~= nil and newCode ~= code.code then
+              SetValueByPath(data, code.path, newCode)
+              modifiedCount = modifiedCount + 1
+            end
+          end
+          seenIds[fileName] = true
+        else
+          -- 新增 aura：克隆模板 + 按块构建
+          local newData = template and DeepCopy(template) or {}
+          newData.id = fileName
+          newData.uid = GenerateUID()
+          if mainData and mainData.id then
+            newData.parent = mainData.id
+          end
+          ApplyBlocksToData(newData, blocks)
+          table.insert(children, newData)
+          auraMap[fileName] = newData
+          addedCount = addedCount + 1
+          seenIds[fileName] = true
+        end
+      end
+    end
+    p:close()
+  end
+
+  -- 5. 删除：现有 aura 在 output/ 中无对应文件 → 从 children 移除
+  local keptChildren = {}
+  for _, child in ipairs(children) do
+    if child and child.id and seenIds[child.id] then
+      table.insert(keptChildren, child)
+    elseif not (child and child.id) then
+      table.insert(keptChildren, child)
+    else
+      removedCount = removedCount + 1
+    end
+  end
+  if transmit.c then
+    transmit.c = keptChildren
+  end
+
+  -- 6. 编码回导入字符串
+  -- 无任何变化时直接复用快照原始字节（避免 LibSerialize 哈希表遍历顺序导致字节流抖动）
+  if modifiedCount == 0 and addedCount == 0 and removedCount == 0 then
+    local c0 = LibDeflate:CompressDeflate(bin, { level = 9 })
+    local encoded0 = "!WA:2!" .. LibDeflate:EncodeForPrint(c0)
+    return encoded0, nil, 0, 0, 0
+  end
   local serialized = LibSerialize:SerializeEx({ errorOnUnserializableType = false }, transmit)
   local compressed = LibDeflate:CompressDeflate(serialized, { level = 9 })
   local encoded = "!WA:2!" .. LibDeflate:EncodeForPrint(compressed)
 
-  if #missingFiles > 0 then
-    return encoded, nil, modifiedCount, missingFiles
+  -- 7. 回写快照：固化新增 aura 的 uid 与结构（下次 build 不再视为新增）
+  local wf = io.open(rawPath, "wb")
+  if wf then
+    wf:write(serialized)
+    wf:close()
   end
-  return encoded, nil, modifiedCount, {}
+
+  return encoded, nil, modifiedCount, addedCount, removedCount
 end
 
 local M = {

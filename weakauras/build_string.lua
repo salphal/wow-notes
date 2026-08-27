@@ -37,7 +37,7 @@ end
 local outDir = target.dir .. "/output"
 local outPath = target.dir .. "/output.txt"
 
-local encoded, err, modifiedCount, missingFiles = wa.BuildStringFromOutput(outDir)
+local encoded, err, modifiedCount, addedCount, removedCount = wa.BuildStringFromOutput(outDir)
 if not encoded then
   io.stderr:write(string.format("错误: %s\n", err))
   os.exit(1)
@@ -52,11 +52,5 @@ f:write(encoded)
 f:close()
 
 io.write(string.format("已生成 %s (%d 字符)\n", outPath, #encoded))
-io.write(string.format("应用修改: %d 个代码块\n", modifiedCount))
-if missingFiles and #missingFiles > 0 then
-  io.write("警告: 以下代码文件缺失（对应 aura 保持原始代码）:\n")
-  for _, name in ipairs(missingFiles) do
-    io.write(string.format("  - %s\n", name))
-  end
-end
+io.write(string.format("修改: %d 个代码块 | 新增: %d 个 aura | 移除: %d 个 aura\n", modifiedCount, addedCount or 0, removedCount or 0))
 os.exit(0)
