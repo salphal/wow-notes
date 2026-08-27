@@ -11,8 +11,10 @@ regionType: empty
   作者：七叔丿
   单独对BOSS战进行了仇恨优化，普通时间单冰触，BOSS战6冰触。
 ]]
+
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_BLOOD_DK_SELFVF then return end APL_BLOOD_DK_SELFVF = true
+
 -- 技能列表
 local S = {
     FrostPresence = 48263,     -- 冰霜灵气
@@ -29,11 +31,13 @@ local S = {
     HornOfWinter = 57623,      -- 寒冬号角
     GCDProbe = 61304,
 }
+
 -- BUFF/DEBUFF
 local FrostFeverID = 55095     -- 冰霜热疫
 local BloodPlagueID = 55078    -- 血之疫病
 local HornOfWinterBuffID = 57623  -- 寒冬号角BUFF
 local CoagulatedBloodID = 1282343  -- 啜血BUFF ID
+
 -- 起手序列状态
 local openerStep = 0
 local openerDone = false
@@ -42,14 +46,17 @@ local openerSQ = {
     S.PlagueStrike, S.BloodBoil, S.DeathAndDecay, S.RuneWeapon,
     S.IcyTouch
 }
+
 -- 辅助函数
 local function getDebuffRemain(unit, spellId)
     return math.max(0, VF_getDebuff(unit, spellId, "HARMFUL|PLAYER") or 0)
 end
+
 -- 检测啜血BUFF（用ID检测，被动触发用HELPFUL过滤器）
 local function hasCoagulatedBlood()
     return (VF_getBuff("player", CoagulatedBloodID, "HELPFUL") or 0) > 0
 end
+
 -- AOE计数：周围10码内敌人数量
 local function getAOECount()
     local count = 0
@@ -68,6 +75,7 @@ local function getAOECount()
     end
     return count
 end
+
 --确认疾病雕文
 local function hasPestilenceGlyph()
     for i = 1, 6 do
@@ -78,6 +86,7 @@ local function hasPestilenceGlyph()
     end
     return false
 end
+
 -- 战斗日志监听：推进起手序列
 local function onCLEUEvent()
     local _, subEvent, _, srcGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
@@ -93,6 +102,7 @@ local function onCLEUEvent()
         end
     end
 end
+
 local Manager = CreateFrame("Frame", "BloodDKAPLManager", UIParent)
 Manager:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Manager:SetScript("OnEvent", function(_, e)
@@ -100,6 +110,7 @@ Manager:SetScript("OnEvent", function(_, e)
             onCLEUEvent()
         end
 end)
+
 -- ActionList（主技能宏绑定符文打击）
 local ActionList = {
     --{ S.FrostPresence, "spell", "冰霜灵气" },
@@ -116,6 +127,7 @@ local ActionList = {
     { S.HornOfWinter, "macro", "/cast 寒冬号角\\n/cast !符文打击", GetSpellTexture("寒冬号角") },
     { 6603, "macro", "/startattack\\n/cast !符文打击" },
 }
+
 local function APLCallback_BloodDK()
     local win = (tonumber(GetCVar("SpellQueueWindow")) or 400)/1000
     local inCombat = UnitAffectingCombat("player")
@@ -274,6 +286,7 @@ local function APLCallback_BloodDK()
     
     return 6603
 end
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_BloodDK
 aura_env.APLName = "七叔深血"

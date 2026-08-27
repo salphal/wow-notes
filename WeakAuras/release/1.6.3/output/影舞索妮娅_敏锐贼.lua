@@ -11,8 +11,10 @@ regionType: empty
   贡献人：影舞者Sonia
   优化：哀冬
 ]]
+
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_SUBTLETY_ROGUE_SONIA_WLK then return end APL_SUBTLETY_ROGUE_SONIA_WLK = true
+
 -- 禁止暗影步名单
 local ShadowStepBlacklist = {
     ["奥"] = true,
@@ -30,6 +32,7 @@ local ShadowStepBlacklist = {
     ["克苏恩"] = true,
     ["克苏恩之眼"] = true,
 }
+
 -- 禁止消失名单
 local VanishBlacklist = {
     ["费尔根"] = true,
@@ -47,11 +50,13 @@ local VanishBlacklist = {
     ["冰吼"] = true,
     --["哈卡"] = true,
 }
+
 -- 无背名单
 local NoBackList = {
     ["塔迪乌斯"] = true,
     ["科隆加恩"] = true,
 }
+
 local MutiTargetEncounterIDlist = {
     [1121] = true,--4DK
     [789] = true,--高阶祭司塞卡尔
@@ -75,10 +80,12 @@ local MutiTargetEncounterIDlist = {
     [733] = true,--凯尔萨斯
     [1110] = true,--黑女巫
 }
+
 local WAParam = aura_env
 local CurrentEncounterID = 0
 local intoSmartAOE = false
 local FoKCount = 0
+
 local ID = {
     Ambush = --[[select(7, GetSpellInfo("伏击")) or ]]48691,
     Envenom = --[[select(7, GetSpellInfo("毒伤")) or ]]57993,
@@ -105,6 +112,7 @@ local ID = {
     SunderArmor = 7386,
     T9Buff = 67210,
 }
+
 local ActionList = {
     { ID.ShadowDance, "macro", "/use 10\\n/use 13\\n/use 14\\n/cast 狮心\\n/cast 石像形态\\n/cast 血性狂怒\\n/cast 狂暴\\n/cast 暗影之舞", GetSpellTexture("暗影之舞") },
     { ID.BladeFlurry, "macro", "/use 10\\n/use 13\\n/use 14\\n/cast 狮心\\n/cast 石像形态\\n/cast 血性狂怒\\n/cast 狂暴\\n/cast 剑刃乱舞", GetSpellTexture("剑刃乱舞") },
@@ -130,12 +138,14 @@ local ActionList = {
     { -113, "macro", "/use 菊花茶", 132819 },
     { 6603, "macro", "/startattack" },
 }
+
 local function IsMainHandDagger()
     local itemID = GetInventoryItemID("player", INVSLOT_MAINHAND)
     if not itemID then return false end
     local _, _, _, _, _, classID, subclassID = GetItemInfoInstant(itemID)
     return classID == 2 and subclassID == 15
 end
+
 -- 8码内敌人数量
 local function getEnemyCount(dist)
     local count = 0
@@ -154,6 +164,7 @@ local function getEnemyCount(dist)
     end
     return count
 end
+
 local function getHPPercent(unit)
     unit = unit or "target"
     if not UnitExists(unit) then return 0 end
@@ -161,6 +172,7 @@ local function getHPPercent(unit)
     if m == 0 then return 0 end
     return (UnitHealth(unit) / m) * 100
 end
+
 local function APLCallback()
     local CastWindow = (tonumber(GetCVar("SpellQueueWindow")) or 400)/1000
     local NextSpellID = 6603
@@ -171,9 +183,11 @@ local function APLCallback()
     if not inCombat and StealthDur <= 0 and StealthCD <= 0 then
         return ID.Stealth
     end
+
     if not UnitExists("target") or not UnitCanAttack("player", "target") or UnitIsDead("target") then
         return 6603
     end
+
     local inMeleeRange = (IsSpellInRange(GetSpellInfo(ID.Hemorrhage), "target") == 1)
     local GCD = VF_getSpellCD(61304)
     local _, RedirectCount = VF_getBuff("player", ID.RedirectCharge, "HELPFUL|PLAYER")
@@ -199,12 +213,14 @@ local function APLCallback()
     local DeathImprintCD = math.max(0, VF_getSpellCD(ID.DeathImprint) - GCD)
     local GhostlyStrikeCD = math.max(0, VF_getSpellCD(ID.GhostlyStrike) - GCD)
     local PreparationCD = math.max(0, VF_getSpellCD(ID.Preparation) - GCD)
+
     local MoSDur = math.max(0, VF_getBuff("player", ID.MasterOfSubtlety, "HELPFUL|PLAYER") - GCD)
     local ToTDur = math.max(0, VF_getBuff("player", ID.TricksOfTrade, "HELPFUL|PLAYER") - GCD)
     local SnDDur = math.max(0, VF_getBuff("player", ID.SliceAndDice, "HELPFUL|PLAYER") - GCD)
     local ShadowDanceDur = math.max(0, VF_getBuff("player", ID.ShadowDance, "HELPFUL|PLAYER") - GCD)
     local BladeFlurryDur = math.max(0, VF_getBuff("player", ID.BladeFlurry, "HELPFUL|PLAYER") - GCD)
     local hasBloodlust = ((VF_getBuff("player", 2825, "HELPFUL") > 0) or (VF_getBuff("player", 32182, "HELPFUL") > 0))
+
     local RuptureDur = math.max(0, VF_getDebuff("target", ID.Rupture, "HARMFUL|PLAYER") - GCD)
     local GarroteDur = math.max(0, VF_getDebuff("target", ID.Garrote, "HARMFUL|PLAYER") - GCD)
     local DIDur = math.max(0, VF_getDebuff("target", ID.DeathImprint, "HARMFUL|PLAYER") - GCD)
@@ -216,12 +232,14 @@ local function APLCallback()
         and ((RuptureDur > 1 and SnDDur >= 1 and ShadowDanceDur <= 0) or StealthDur > 0)
         and ((UnitExists("focus") and UnitIsFriend("player", "focus") and not UnitIsDead("focus") and not UnitIsUnit("focus", "player") and (IsSpellInRange(GetSpellInfo(ID.TricksOfTrade), "focus") == 1))
             or (UnitExists("targettarget") and UnitIsFriend("player", "targettarget") and not UnitIsDead("targettarget") and not UnitIsUnit("targettarget", "player") and (IsSpellInRange(GetSpellInfo(ID.TricksOfTrade), "targettarget") == 1)))
+
     for i = 1, 1 do
         --预谋
         if PremeditationCD <= CastWindow and CP <= 3 and (ShadowDanceDur > 0 or (StealthDur > 0 and SnDDur <= 0)) then
             NextSpellID = ID.Premeditation
             break
         end
+
         --赌剔骨
         if inCombat and inBossFight
             and ((AOECount >= 2 and BladeFlurryDur > 0 and ((CP >= 3 and BladeFlurryDur <= 1) or CP >= 5)) --剑舞AOE中优先剔骨
@@ -230,22 +248,26 @@ local function APLCallback()
             NextSpellID = ID.Eviscerate
             break
         end
+
         --切割
         if CP >= 1 and TargetDeadTime >= 5 and ShadowDanceDur <= 0
             and (SnDDur <= 0 or (SnDDur <= math.min(3,DIDur,RuptureDur) and BladeFlurryDur <= 0 and MoSDur <= 0 and ToTDur <= 0))then
             NextSpellID = ID.SliceAndDice
             break
         end
+
         --嫁祸
         if inBossFight and tricksReady and DIDur > 0 and SnDDur > 0 and TargetExecuteTime >= 10 then
             NextSpellID = ID.TricksOfTrade
             break
         end
+
         -- 转嫁
         if SnDDur > CastWindow and RedirectCount > CP then
             NextSpellID = ID.Redirect
             break
         end
+
         --5星终结技：割裂 > 死亡印记 > 剔骨
         if CP >= 5 then
             if ShadowDanceDur > 0 and ShadowDanceDur <= 1 and Energy >= 40 and DIDur > 0 then --影舞最后1秒可以考虑赌个暴击伏击
@@ -266,6 +288,7 @@ local function APLCallback()
                 break
             end
         end
+
         --破甲
         if inBossFight and CP >= 1
             and EADur <= CastWindow and TargetDeadTime >= CP*6*0.75
@@ -273,6 +296,7 @@ local function APLCallback()
             NextSpellID = ID.ExposeArmor
             break
         end
+
         -- AOE模式，手动打过刀扇击中3个以上敌人就持续刀扇到不足3个或手动打出血为止
         if intoSmartAOE then
             if inBossFight and BladeFlurryCD <= CastWindow and SnDDur >= 3 then
@@ -282,6 +306,7 @@ local function APLCallback()
             NextSpellID = ID.FanOfKnives
             break
         end
+
         --爆发
         if WAParam.config.autoBurst and inBossFight and inCombat and inMeleeRange and EADur > 0 then
             --特殊AOE场景战自动剑舞
@@ -319,11 +344,13 @@ local function APLCallback()
                 return -113
             end
         end
+
         --伏击/绞喉
         if (StealthDur > 0 or (ShadowDanceDur > 0 and CP < 5)) then
             NextSpellID = ID.Ambush
             break
         end
+
         --攒星
         if CP < 5 then
             --临终毒伤泄星
@@ -346,6 +373,7 @@ local function APLCallback()
             end
         end
     end
+
     --自动暗影步
     -- 刺骨/伏击/绞喉直接增伤，其他近战技能不在近战范围时
     if ShadowstepCD <= CastWindow and not ShadowStepBlacklist[UnitName("target")]
@@ -355,16 +383,20 @@ local function APLCallback()
                 and NextSpellID ~= ID.ExposeArmor and NextSpellID ~= ID.DeathImprint)) then
         NextSpellID = ID.Shadowstep
     end
+
     --绞喉伏击选择,主手不是匕首或者没有背智能绞喉，不存在绞喉dot且预期能跳完dot且不再剑舞状态可以换绞喉
     if NextSpellID == ID.Ambush and (not IsMainHandDagger() or NoBackList[UnitName("target")] or (TargetDeadTime > 20 and GarroteDur <= 0 and BladeFlurryDur <= 0)) then
         NextSpellID = ID.Garrote
     end
+
     --移动战穿插鬼魅
     if NextSpellID == ID.Hemorrhage and GhostlyStrikeCD < CastWindow and isMoving then
         NextSpellID = ID.GhostlyStrike
     end
+
     return NextSpellID
 end
+
 local Manager = CreateFrame("Frame",nil, UIParent)
 Manager:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Manager:RegisterEvent("ENCOUNTER_START")
@@ -401,9 +433,12 @@ Manager:SetScript("OnEvent", function(self, event, ...)
             CurrentEncounterID = 0
         end
 end)
+
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback
 aura_env.APLName = "影舞索妮娅"
+
 
 -- ===== actions.init 加载时自定义代码 =====
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end

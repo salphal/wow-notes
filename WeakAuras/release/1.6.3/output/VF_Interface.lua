@@ -9,6 +9,7 @@ regionType: empty
 --严禁修改此文件，各个APL需要的函数请自己在各自APL实现，此文件仅仅为注册和旧接口向前兼容
 VF_InterfaceInitFlag = VF_InterfaceInitFlag or false
 if (VF_InterfaceInitFlag == true) then return else VF_InterfaceInitFlag = true end
+
 ------------对外公共函数列表
 ---
 ---
@@ -25,13 +26,17 @@ if (VF_InterfaceInitFlag == true) then return else VF_InterfaceInitFlag = true e
 ---aura_env.APLName:APL逻辑名，方便确认加载APL项, 必须为string格式
 ---相比于上一代接口，初始化工作请各个APL代码在WA的自定义载入中完成
 function VF_registerAPL(APLEnv) if VF_Common then return VF_Common.registerAPL(APLEnv) end end
+
 ---获取击杀预估时间
 ---HPpercent:若填写参数(1~99)，则返回达到对应百分比血量的预估时间
 function VF_getTargetDeadTime(HPpercent) if VF_Common then return VF_Common.getTargetDeadTime(HPpercent) end end
+
 ---获取技能冷却剩余秒数
 function VF_getSpellCD(spellId) if VF_Common then return VF_Common.getSpellCD(spellId) end end
+
 ---获取装备冷却剩余秒数
 function VF_getItemCD(itemId) if VF_Common then return VF_Common.getItemCD(itemId) end end
+
 ---获取buff/debuff信息
 ---param:
 -----unit: 单位标识符

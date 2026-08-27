@@ -11,9 +11,12 @@ regionType: empty
 简化：哀冬
 元素萨一键输出，默认纯单目标闪电箭填充
 ]]
+
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_ELEMENTAL_SHAMAN_WLK_CATGIRL_BOLT then return end APL_ELEMENTAL_SHAMAN_WLK_CATGIRL_BOLT = true
+
 local config = aura_env.config or {}
+
 -- ==========================================
 -- 技能 ID 定义
 -- ==========================================
@@ -32,6 +35,7 @@ local S = {
     Berserking    = 26297,   -- 狂暴（巨魔）
     BloodFury     = 33697,   -- 血性狂怒（兽人）
 }
+
 -- ==========================================
 -- ActionList 定义
 -- ==========================================
@@ -49,6 +53,8 @@ local ActionList = {
     {S.Purge, "spell", "净化术"},
     {S.CallOfElements,  "spell", "元素的召唤"},
 }
+
+
 -- 判断是否在爆发期（有任一爆发 buff）
 local function InBurstWindow()
     -- 常用爆发 Buff ID
@@ -67,6 +73,7 @@ local function InBurstWindow()
     end
     return false
 end
+
 local function HasAllTotems()
     if not GetTotemInfo then return false end
     for slot = 1, 4 do
@@ -77,6 +84,7 @@ local function HasAllTotems()
     end
     return true
 end
+
 -- 判断目标是否正在施法且可打断
 -- UnitCastingInfo 第8个返回值 notInterruptible: nil/0=可断, 1=钢条
 local function TargetIsCasting()
@@ -91,6 +99,7 @@ local function TargetIsCasting()
     end
     return false
 end
+
 -- 判断蓝量百分比
 local function GetManaPercent()
     local mana = UnitPower("player", 0)
@@ -98,6 +107,7 @@ local function GetManaPercent()
     if maxMana == 0 then return 100 end
     return (mana / maxMana) * 100
 end
+
 -- AoE 目标计数（基于 nameplate + WeakAuras.GetRange 测距）
 -- 注意：仅检测玩家→每个目标的距离，无法检测目标之间的距离
 local function getAOECount(range)
@@ -113,6 +123,7 @@ local function getAOECount(range)
     end
     return count
 end
+
 -- ==========================================
 -- 主回调函数
 -- ==========================================
@@ -135,6 +146,7 @@ local function APLCallback_ElementalShaman()
     if castingSpellName == "闪电箭" then
         inCombat = true
     end
+
     -- 战前准备
     if not inCombat then
         -- 火舌武器
@@ -153,15 +165,18 @@ local function APLCallback_ElementalShaman()
         -- 预读闪电箭
         return S.LightningBolt
     end
+
     -- 无效目标
     if not UnitExists("target") or not UnitCanAttack("player", "target") or UnitIsDeadOrGhost("target") then
         return 6603
     end
+
     -- 爆发
     if config.auto_burst and inBossFight and inCombat then
         -- 必须熔岩爆裂技能就绪，开了爆发才有东西打
         if lavaBurstCD <= CastWindow and flameShockRemain > 15 then
             local burstReady = false
+
             -- 元素掌握就绪
             if VF_getSpellCD(S.ElementalMastery) <= CastWindow then
                 burstReady = true
@@ -174,11 +189,13 @@ local function APLCallback_ElementalShaman()
             if VF_getSpellCD(S.Berserking) <= CastWindow or VF_getSpellCD(S.BloodFury) <= CastWindow then
                 burstReady = true
             end
+
             if burstReady then
                 return S.ElementalMastery -- 爆发宏
             end
         end
     end
+
     -- 雷霆风暴
     if config.auto_thunderstorm then
         local manaPercent = GetManaPercent()
@@ -186,12 +203,14 @@ local function APLCallback_ElementalShaman()
             return S.Thunderstorm
         end
     end
+
     -- 水盾
     if config.auto_watershield then
         if waterShieldDur == 0 and not InBurstWindow() then
             return S.WaterShield
         end
     end
+
     -- 打断
     if config.auto_windshear then
         local casting = TargetIsCasting()
@@ -199,33 +218,40 @@ local function APLCallback_ElementalShaman()
             return S.WindShear
         end
     end
+
     -- 烈焰震击
     if flameShockRemain <= 0 and flameShockCD <= CastWindow then
         return S.FlameShock
     end
+
     -- 熔岩爆裂快好了但烈焰震击撑不到
     if lavaBurstCD <= 1 and flameShockRemain < (lavaBurstCD + lavaBurstCT) and flameShockCD <= CastWindow then
         return S.FlameShock
     end
+
     -- 熔岩爆裂
     if lavaBurstCD <= CastWindow and flameShockRemain > lavaBurstCT then
         return S.LavaBurst
     end
+
     -- 闪电链
     if config.smart_chainlightning and chainLightningCD <= CastWindow then
         if getAOECount(30) >= 2 then
             return S.ChainLightning
         end
     end
+
     -- 闪电箭
     return S.LightningBolt
 end
+
 -- ==========================================
 -- 注册 APL
 -- ==========================================
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_ElementalShaman
 aura_env.APLName = "凌小猫粮"
+
 
 -- ===== actions.init 加载时自定义代码 =====
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end

@@ -10,13 +10,17 @@ regionType: empty
   时光毁灭术 APL 
   作者：米娅哈利法（backspace） 时光4 闪闪红星
 ]]
+
+
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_DESTRUCTIONWARLOCK then return end; APL_DESTRUCTIONWARLOCK = true
+
 local hasInferno = IsSpellKnown(1122) and aura_env.config.autoInferno
 local ChaosMeteorMacro = "/cast 混沌流星\\n/petattack [combat]\\n/cqs"
 if aura_env.config.autoBurst then
     ChaosMeteorMacro = "/cqs\\n/cast 狮心(种族特长)\\n/cast 血性狂怒(种族特长)\\n/use 10\\n/use 13\\n/use 14\\n"..ChaosMeteorMacro
 end
+
 local ActionList = {
     { 688, "spell", "召唤小鬼" },
     { 47893, "spell", "邪甲术" },
@@ -34,7 +38,9 @@ local ActionList = {
     { 1122, "macro", "/cast [@cursor] 地狱火", GetSpellTexture("地狱火") },
     { 6603, "macro", "/targetenemy [dead][noharm]\\n/startattack\\n/petattack [combat]\\n/cast [@pettarget,exists] 火焰箭" },
 }
+
 local lastImmCastTime = 0
+
 local function APLCallback()
     local CastWindow = (tonumber(GetCVar("SpellQueueWindow")) or 400)/1000
     local isCombat = UnitAffectingCombat("player")
@@ -78,6 +84,7 @@ local function APLCallback()
         ShadowBoltCT = ShadowBoltCT/0.7
         IncinerateCT = IncinerateCT/0.7
     end
+
     if castingSpellName == "混沌流星" then
         ShadowCount = 0
         AshCount = 0
@@ -108,6 +115,7 @@ local function APLCallback()
     else
         lastImmCastTime = 0
     end
+
     -- ── 脱战/无目标 ──────────────────────────────────────────
     if not isCombat or not UnitExists("target") or not UnitCanAttack("player", "target") or UnitIsDead("target") then
         if VF_getBuff("player", 47893, "HELPFUL|PLAYER") < 300 then
@@ -176,35 +184,42 @@ local function APLCallback()
             return 1295386
         end
     end
+
     -- ── 厄运诅咒 ─────────────────────────────────
     if (isBoss and targetDeadTime > 70 and CodDuration <= 0 and CoDCD <= CastWindow and isCoDRange)
         and (isMoving or (ImmDuration > 0) and (SBDuration <= ChaosMeteorCD or SBDuration > 8)) then
         return 47867
     end
+
     -- ── 地狱火 ────────────────────────────────────────────
     if hasInferno and isBoss and targetDeadTime > 20 and targetDeadTime < 65 and InfernoCD <= CastWindow and GetItemCount(5565) > 0 then
         return 1122
     end
+
     -- ── 补献祭（常规） ────────────────────────────────────
     if (ImmDuration + 0.05 < ImmCT and targetDeadTime >= 5)
         or (SBDuration > 0 and (ImmDuration < SBDuration + ImmCT + ChaosMeteorCT + 0.4)) then
         return 47811
     end
+
     -- ── 混乱之箭 ──────────────────────────────────────────
     if ChaosBoltCD <= CastWindow and AshCount < 6 then
         return 59172
     end
+
     -- ── 暗影之怒（救场） ───────────────────────────────────
     if ShadowfuryCD <= CastWindow and ShadowCount <= 5 and SBDuration > ChaosMeteorCD
         and ((SBDuration <= ((6-AshCount)*IncinerateCT + (6-ShadowCount)*ShadowBoltCT + ChaosMeteorCT + 1.5)) or hastePercent < hasteThreshold) then
         return 47847
     end
+
     -- ── 暗影烈焰（救场） ──────────────────────────────────
     if SFCD <= CastWindow and isSFRange
         and ((AshCount <= 4 or ShadowCount <= 4) and (SBDuration > ChaosMeteorCD and (SBDuration <= ((6-AshCount)*IncinerateCT + (6-ShadowCount)*ShadowBoltCT + ChaosMeteorCT + 1.5)))
             or (AshCount <= 4 and ShadowCount <= 4 and hastePercent < hasteThreshold)) then
         return 61290
     end
+
     -- ── 暗影灼烧 ──────────────────────────────────────
     if SBCD <= CastWindow
         and ((AshCount + ShadowCount >= 5 and ((hastePercent > hasteThreshold+8) or (ConflagrateCD < 4) or (ShadowfuryCD < 4)))
@@ -212,10 +227,12 @@ local function APLCallback()
             or (AshCount + ShadowCount >= 7)) then
         return 47827
     end
+
     -- ── 暗不够，暗影箭填缝 ────────────────────────────────────────
     if ShadowCount <= 5 and ShadowCount <= AshCount then
         return 47809
     end
+
     -- ── 火不够，考虑提前补献祭 ────────────────────────────────────────
     if ImmDuration - ImmCT < 3
         and (AshCount == 5 or (AshCount == 3 and ConflagrateCD < ImmCT))
@@ -223,10 +240,12 @@ local function APLCallback()
         and targetDeadTime >= 5 then
         return 47811
     end
+
     -- ── 火不够，烧尽填缝 ────────────────────────────────────────
     if AshCount < 5 or (AshCount < 6 and ConflagrateCD > (6 - AshCount)*IncinerateCT) then
         return 47838
     end
+
     -- ── 暗影箭兜底 ────────────────────────────────────────
     if(GCD < CastWindow) then
         return 47809
@@ -234,9 +253,12 @@ local function APLCallback()
         return 6603
     end
 end
+
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback
 aura_env.APLName = "米娅毁灭术"
+
 
 -- ===== actions.init 加载时自定义代码 =====
 if(WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC) then return end

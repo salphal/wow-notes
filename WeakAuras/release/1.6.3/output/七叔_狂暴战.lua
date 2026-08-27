@@ -10,8 +10,10 @@ regionType: empty
   狂暴战打地鼠 APL - 泰坦重铸时光服
   作者：Sevenuncle
 ]]
+
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_FURY_WARRIOR_SELFVF then return end APL_FURY_WARRIOR_SELFVF = true
+
 local function getHPPercent(unit)
     unit = unit or "target"
     if not UnitExists(unit) then return 0 end
@@ -19,7 +21,9 @@ local function getHPPercent(unit)
     if m == 0 then return 0 end
     return (UnitHealth(unit) / m) * 100
 end
+
 local dwUsed = false
+
 local S = {
     HeroicStrike = --[[select(7, GetSpellInfo("英勇打击")) or ]]47450,
     Bloodthirst = --[[select(7, GetSpellInfo("嗜血")) or ]]23881,
@@ -51,7 +55,9 @@ local S_CL = {
     Slam = -200000-S.Slam,
     Execute = -200000-S.Execute,
 }
+
 local BurstMacroBody = "/cast 死亡之愿\\n/cast 狮心(种族特长)\\n/cast 狂暴(种族特长)\\n/cast 血性狂怒(种族特长)\\n/cast 石像形态(种族特长)\\n/use 10\\n/use 13\\n/use 14\\n/use 通用热力工程炸药\\n/use [@player] 萨隆邪铁炸弹"
+
 local ActionList = {
     -- 捆绑英勇打击的宏（高怒单体）
     { S_HS.Bloodthirst, "macro", "/cast 嗜血\\n/cast !英勇打击", GetSpellTexture("嗜血") },
@@ -83,6 +89,7 @@ local ActionList = {
     { -112, "macro", "/use 10\\n/use 通用热力工程炸药\\n/use [@player] 萨隆邪铁炸弹", 133035 },
     { 2458, "spell", "狂暴姿态" }
 }
+
 -- 平砍计时器
 local SwingTimer = {
     baseSpeed = 0,
@@ -90,11 +97,14 @@ local SwingTimer = {
     pauseTotal = 0,
     isPaused = false
 }
+
 local function getSwingRemain()
     SwingTimer.baseSpeed = UnitAttackSpeed("player") or SwingTimer.baseSpeed
     local remain = SwingTimer.baseSpeed - (GetTime() - SwingTimer.lastSwing - SwingTimer.pauseTotal)
     return math.max(0, remain)
 end
+
+
 local Manager = CreateFrame("Frame", "FuryWarriorSwingManager", UIParent)
 Manager:SetScript("OnUpdate", function(_, elapsed)
     if SwingTimer.isPaused then
@@ -133,6 +143,7 @@ Manager:SetScript("OnEvent", function(_, event, ...)
         SwingTimer.isPaused = false
     end
 end)
+
 local function hasFear()
     local count = C_LossOfControl.GetActiveLossOfControlDataCountByUnit("player")
     for i = 1, count do
@@ -143,6 +154,7 @@ local function hasFear()
     end
     return false
 end
+
 -- 8码内敌人数量
 local function getNearbyCount()
     local count = 0
@@ -161,6 +173,7 @@ local function getNearbyCount()
     end
     return count
 end
+
 local function APLCallback_FuryWarrior()
     -- 脱战重置
     if not UnitAffectingCombat("player") then
@@ -188,6 +201,7 @@ local function APLCallback_FuryWarrior()
     local hasBS = (math.max(0, VF_getBuff("player", S.Bloodsurge, "HELPFUL|PLAYER") - gcdRemain) > 0)
     local isBoss = ((IsEncounterInProgress() or IsResting()) and UnitLevel("target") == -1)
     local inMeleeRange = (IsSpellInRange("嗜血", "target") == 1)
+
     local bt = cd(S.Bloodthirst)
     local ww = cd(S.Whirlwind)
     local rk = cd(S.Recklessness)
@@ -197,6 +211,7 @@ local function APLCallback_FuryWarrior()
     local bz = cd(S.BerserkerRage)
     local dw = cd(S.DeathWish)
     local st = cd(S.ShatteringThrow)
+
     if not dwUsed and dw > 0 then
         dwUsed = true
     end
@@ -246,6 +261,7 @@ local function APLCallback_FuryWarrior()
             return -112
         end
     end
+
     -- 技能自动选择
     local function autoSelectSpell(id)
         if rage >= 45 then
@@ -257,22 +273,27 @@ local function APLCallback_FuryWarrior()
         end
         return id
     end
+
     -- 嗜血
     if bt <= win then
         return autoSelectSpell(S.Bloodthirst)
     end
+
     -- 旋风斩
     if ww <= win and bt > win then
         return autoSelectSpell(S.Whirlwind)
     end
+
     -- 血涌猛击
     if hasBS and bt > win and ww > win then
         return autoSelectSpell(S.Slam)
     end
+
     -- 斩杀
     if hp < 20 and not hasBS and bt >= 1.5 and ww >= 1.5 and rage >= 60 then
         return autoSelectSpell(S.Execute)
     end
+
     local SwingRemain = getSwingRemain()
     -- 低怒气下在平砍发生前取消附加技
     if rage < 30 and SwingRemain < 0.3 then
@@ -282,20 +303,24 @@ local function APLCallback_FuryWarrior()
             return 6603
         end
     end
+
     -- 英勇打击（单体）：怒气 >= 12
     if rage >= 12 and not intoCleaveMode and SwingRemain >= 0.3 then
         if not IsCurrentSpell(S.HeroicStrike) then
             return S.HeroicStrike
         end
     end
+
     -- 顺劈斩（AOE）：怒气 >= 20
     if rage >= 20 and intoCleaveMode and SwingRemain >= 0.3 then
         if not IsCurrentSpell(S.Cleave) then
             return S.Cleave
         end
     end
+
     return 6603
 end
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_FuryWarrior
 aura_env.APLName = "七叔狂暴战"

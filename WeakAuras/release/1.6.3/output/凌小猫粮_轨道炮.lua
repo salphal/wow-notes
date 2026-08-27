@@ -18,7 +18,9 @@ P3   月民: 星落(可选)>愤怒(耗星辰,触自然之赐切星火)>星火(�
 ]]
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_DRUID_BALANCE_RAILGUN_CATGIRL then return end; APL_DRUID_BALANCE_RAILGUN_CATGIRL = true
+
 local WAParam = aura_env
+
 local S = {
     Moonfire     = 48463,    -- 月火术 — 瞬发DoT，给 太阳能量 +1
     InsectSwarm  = 48468,    -- 虫群   — 瞬发DoT 给 月亮能量 +1
@@ -32,6 +34,7 @@ local S = {
     ForceOfNature = 33831,   -- 自然之力 — 召唤3树人
     Innervate = 29166,       -- 激活
 }
+
 local B = {
     SolarEnergy  = 1309555,  -- 太阳能量
     LunarEnergy  = 1309554,  -- 月亮能量
@@ -41,8 +44,10 @@ local B = {
     MoonChosen   = 1309557,  -- 月神选民 — 轨道炮施放后获得，增伤标记
     NatureGrace  = 16886,    -- 自然之赐 — 星火/愤怒暴击触发，持续5s，+15%施法速度
 }
+
 local MAX_ENERGY = 3
 local FOCUS_OFFSET = 100000
+
 local ActionList = {
     {S.Moonfire,    "spell", "月火术"},
     {S.InsectSwarm, "spell", "虫群"},
@@ -62,12 +67,14 @@ local ActionList = {
     {S.Moonfire    + FOCUS_OFFSET, "macro", "/cast [target=focus] 月火术", GetSpellTexture("月火术")},
     {6603, "macro", "/targetenemy [dead][noharm]"},
 }
+
 -- 玩家剩余蓝量百分比
 local function PlayerManaPct()
     local mana = UnitPower("player", 0)
     local maxMana = UnitPowerMax("player", 0)
     return maxMana > 0 and (mana / maxMana) * 100 or 100
 end
+
 -- 主优先级逻辑
 local function APLCallback()
     -- 读取所有状态
@@ -99,9 +106,11 @@ local function APLCallback()
     local _, hStacks = VF_getBuff("player", B.HeavenFire,  "HELPFUL|PLAYER")
     local _, wStacks = VF_getBuff("player", B.StarWrath,   "HELPFUL|PLAYER")
     local natureGrace = math.max(0, VF_getBuff("player", B.NatureGrace, "HELPFUL|PLAYER") - GCD)
+
     -- 目标 debuff
     local isRem = math.max(0, VF_getDebuff("target", S.InsectSwarm, "HARMFUL|PLAYER") - math.max(0,GCD-0.1))
     local mfRem = math.max(0, VF_getDebuff("target", S.Moonfire,    "HARMFUL|PLAYER") - math.max(0,GCD-0.1))
+
     -- 焦点 debuff
     local focusIsRem = 999
     local focusMfRem = 999
@@ -160,18 +169,22 @@ local function APLCallback()
     if VF_getBuff("player", S.MoonkinForm, "HELPFUL|PLAYER") <= 0 then
         return S.MoonkinForm
     end
+
     -- 非法目标检查
     if  (UnitExists("target") == nil) or (UnitCanAttack("player","target") == false) or UnitIsDead("target") then
         return 6603
     end
+
     -- 星火预读（可选）
     if not inCombat and (WAParam.config and WAParam.config.Prepull) then
         return S.Starfire
     end
+
     -- 自然之力（可选）
     if (WAParam.config and WAParam.config.ForceOfNature) and inBoss and inCombat and cd(S.ForceOfNature) <= CastWindow then
         return S.ForceOfNature
     end
+
     -- 相对宽裕的冲层期丢精灵火和激活
     if eclipseDur <= 0 and moonChosenDur <= 0 then
         -- 精灵之火
@@ -228,6 +241,7 @@ local function APLCallback()
         -- 能量未满3 → 补足再开炮（防预测虚高导致能量不足，几乎不可能走到）
         if solarStacks < MAX_ENERGY then return S.Moonfire end
         if lunarStacks < MAX_ENERGY then return S.InsectSwarm end
+
         if inCombat then
             if inBoss then return S.Railgun end     -- 全爆发 + 轨道炮
             return (0-S.Railgun)                         -- 手套 + 轨道炮
@@ -235,8 +249,10 @@ local function APLCallback()
             return 6603                           -- 正在读炮或脱战 → 等着，不往下掉
         end
     end
+
     -- P5: 月蚀 + 炮 CD 中/击杀时间在月蚀与选民微妙的调控节奏
     if eclipseDur > 0 and (railgunCD > CastWindow or (targetDeadTime > 20 and targetDeadTime <= 20 + eclipseDur - railgunCT)) then
+
         -- 日月能维护
         if solarDur <= starfireCT+0.5 then return S.Starfire end
         if lunarDur <= starfireCT+0.5 then return S.Wrath end--用starfireCT是因为星火也要吃增伤
@@ -246,6 +262,7 @@ local function APLCallback()
             if isRem < threshold then return S.InsectSwarm end
             if mfRem < threshold then return S.Moonfire end
         end
+
         -- 双满兜底 → 自然之赐或愤怒<1秒 → 星火
         if eclipseDur > starfireCT
             and (natureGrace >math.min(starfireCT,2*wrathCT)
@@ -255,8 +272,10 @@ local function APLCallback()
         end
         return S.Wrath
     end
+
     -- P1: 冲月蚀
     if eclipseDur == 0 and moonChosenDur == 0 then
+
         -- 日月能维护
         if solarDur <= starfireCT+0.5 then return S.Starfire end
         if lunarDur <= starfireCT+0.5 then return S.Wrath end--用starfireCT是因为星火也要吃增伤
@@ -266,6 +285,7 @@ local function APLCallback()
             if isRem < threshold then return S.InsectSwarm end
             if mfRem < threshold then return S.Moonfire end
         end
+
         -- 自然之赐 
         if (natureGrace>math.min(starfireCT,2*wrathCT) or (natureGrace>0 and natureGrace<wrathCT)) and solarStacks < MAX_ENERGY then
             return S.Starfire
@@ -288,6 +308,7 @@ local function APLCallback()
     -- 兜底
     return 6603
 end
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback
 aura_env.APLName = "凌小猫娘"

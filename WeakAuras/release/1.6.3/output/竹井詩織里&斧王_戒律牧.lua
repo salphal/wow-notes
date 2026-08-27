@@ -65,6 +65,7 @@ function (event, ...)
     end
     return true
 end
+
 -- UNIT_SPELLCAST_SENT, UNIT_SPELLCAST_SUCCEEDED, UNIT_SPELLCAST_FAILED, UNIT_SPELLCAST_INTERRUPTED, UNIT_SPELLCAST_CHANNEL_STOP
 
 -- ===== actions.init 自定义代码 =====
@@ -75,18 +76,21 @@ end
 ]]
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_DisciplinePriest_WLK then return end APL_DisciplinePriest_WLK = true
+
 local S = {
     PWS = 48066, -- 真言术：盾
     PENANCE = 53007, -- 苦修
     FLASH = 48071, -- 快速治疗
     POM = 48113 -- 愈合祷言
 }
+
 local SKey = {
     PWS = "PWS",
     PENANCE = "PENANCE",
     FLASH = "FLASH",
     POM = "POM"
 }
+
 local C = {
     penanceHealthPercent = 50, -- 对应旧版 LeftToPenance 低于此血量触发苦修(戒律)
     shieldHealthPercent = 85, -- 对应旧版 LeftToShield 低于此血量优先盾(戒律)
@@ -98,11 +102,13 @@ local C = {
     healerSupport40Battleground = false, -- 支持40人战场
     supportSpecialDebuff = false -- 支持特殊Debuff
 }
+
 if aura_env.config then
     for k, v in pairs(aura_env.config) do
         C[k] = v
     end
 end
+
 local DebuffTable = {
     [66331] = true, -- 穿刺
     [66406] = true, -- 狗头人上身
@@ -152,10 +158,12 @@ local DebuffTable = {
     [68980] = true, -- 收割灵魂
     [72754] = true -- 污染 
 }
+
 local function spellName(id, fallback)
     local name = GetSpellInfo(id)
     return name or fallback
 end
+
 _G.ShioriPriestLastCastUnits = _G.ShioriPriestLastCastUnits or {
     LastCastPenanceUnitName = "",
     LastCastFlashUnitName = "",
@@ -163,11 +171,13 @@ _G.ShioriPriestLastCastUnits = _G.ShioriPriestLastCastUnits or {
     FlashGUID = "",
     PenanceStartTime = 0
 }
+
 local spellNames = {}
 spellNames.PWS = spellName(S.PWS, "真言术：盾")
 spellNames.PENANCE = spellName(S.PENANCE, "苦修")
 spellNames.FLASH = spellName(S.FLASH, "快速治疗")
 spellNames.POM = spellName(S.POM, "愈合祷言")
+
 local units = {"player"}
 for i = 1, 4 do
     table.insert(units, "party" .. i)
@@ -175,9 +185,12 @@ end
 for i = 1, (C.healerSupport40Battleground and 40 or 25) do
     table.insert(units, "raid" .. i)
 end
+
 local initializedId = 8588000 -- 牧师专属基准ID
+
 local actionIds = {}
 local actionList = {}
+
 local function addUnitMacro(key, spellId, macroSpellName, unit, iconId)
     actionIds[key] = actionIds[key] or {}
     local id = initializedId + (#actionList + 1)
@@ -185,12 +198,14 @@ local function addUnitMacro(key, spellId, macroSpellName, unit, iconId)
     local macroText = "/cast [@" .. unit .. ",help,nodead] " .. macroSpellName
     table.insert(actionList, {id, "macro", macroText, iconId or GetSpellTexture(spellId)})
 end
+
 for _, unit in ipairs(units) do
     addUnitMacro(SKey.PWS, S.PWS, spellNames.PWS, unit)
     addUnitMacro(SKey.PENANCE, S.PENANCE, spellNames.PENANCE, unit)
     addUnitMacro(SKey.FLASH, S.FLASH, spellNames.FLASH, unit)
     addUnitMacro(SKey.POM, S.POM, spellNames.POM, unit)
 end
+
 actionIds.NOOP = initializedId + 200000
 table.insert(actionList, {actionIds.NOOP, "macro", "/stopmacro", GetSpellTexture(47536)})
 local function hasBuff(unit, spellId, fallbackName, isFromPlayer)
@@ -203,6 +218,7 @@ local function hasBuff(unit, spellId, fallbackName, isFromPlayer)
     end
     return WA_GetUnitBuff(unit, expectedName) ~= nil
 end
+
 local function hasDebuff(unit, spellId, fallbackName, isFromPlayer)
     local expectedName = GetSpellInfo(spellId) or fallbackName
     if not expectedName or expectedName == "" then
@@ -213,6 +229,7 @@ local function hasDebuff(unit, spellId, fallbackName, isFromPlayer)
     end
     return WA_GetUnitDebuff(unit, expectedName) ~= nil
 end
+
 local function spellReady(spellId)
     local start, duration, enabled = GetSpellCooldown(spellId)
     if enabled == 0 then
@@ -226,6 +243,7 @@ local function spellReady(spellId)
     end
     return true
 end
+
 local function inRange(unit, spellId)
     if unit == "player" then
         if UnitIsDeadOrGhost(unit) then
@@ -251,6 +269,7 @@ local function inRange(unit, spellId)
     end
     return true
 end
+
 local function isMoving()
     return GetUnitSpeed("player") > 0
 end
@@ -284,6 +303,7 @@ local function getUnitRoleType(unit, maxUnit, unitMaxHp)
     end
     return Role
 end
+
 local function unitHasTOCDebuff(unit)
     if not C.supportSpecialDebuff then
         return false
@@ -299,6 +319,7 @@ local function unitHasTOCDebuff(unit)
     end
     return false
 end
+
 -- 核心新增：计算考虑了治疗预读的真实血量缺口
 local function calcUnitHealthDiff(unit, unitHealthMax)
     if not UnitExists(unit) then
@@ -324,12 +345,14 @@ local function calcUnitHealthDiff(unit, unitHealthMax)
     end
     return unitHealthDiff
 end
+
 local function action(key, unit)
     if unit then
         return actionIds[key] and actionIds[key][unit]
     end
     return actionIds[key]
 end
+
 local function runRaid(isParty)
     local maxRaidHealthPlayerUnit = ""
     local maxRaidHealthPlayerHealth = 0
@@ -547,6 +570,7 @@ local function runRaid(isParty)
     
     return action(spellKey, unitToCast)
 end
+
 local function callbackHealer()
     if select(2, UnitClass("player")) ~= "PRIEST" then
         return action("NOOP")
@@ -559,6 +583,7 @@ local function callbackHealer()
     end
     return runRaid(isParty)
 end
+
 --粗糙的性能优化，可能会导致非GCD技能延后
 local lastActionID = 0
 local lastTime = 0
@@ -572,9 +597,14 @@ local function APLCallback()
     end
     return lastActionID
 end
+
 aura_env.APLActionList = actionList
 aura_env.APLCallback = APLCallback
 aura_env.APLName = "竹井&斧王戒律"
+
+
+
+
 
 -- ===== actions.init 加载时自定义代码 =====
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC or not VF_registerAPL then

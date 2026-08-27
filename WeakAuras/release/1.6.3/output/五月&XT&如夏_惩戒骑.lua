@@ -10,12 +10,16 @@ regionType: empty
   惩戒骑 APL 
   贡献人：五月晴空 TachyonXue 如夏
 ]]
+
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_RET_PALADIN_WLK_SELFVF then return end APL_RET_PALADIN_WLK_SELFVF = true
+
 local WAParam = aura_env
 local CurrentEncounterID = 0
+
 -- 【五月】平砍计时器全局表
 local SwingTimers = { player = nil }
+
 -- 目标剩余血量百分比
 local function getHPPercent(unit)
     unit = unit or "target"
@@ -31,12 +35,14 @@ local function getHPPercent(unit)
     hpPercent = math.floor(hpPercent * 10) / 10
     return math.max(0, math.min(100, hpPercent))
 end
+
 -- 玩家剩余蓝量百分比
 local function getManaPercent()
     local mana = UnitPower("player", 0)
     local maxMana = UnitPowerMax("player", 0)
     return maxMana > 0 and (mana / maxMana) * 100 or 100
 end
+
 local function isTargetUndeadOrDemon()
     if not UnitExists("target") then
         return false
@@ -52,6 +58,7 @@ local function isTargetUndeadOrDemon()
     end
     return false
 end
+
 local LastAOECheck = 0
 local CachedAOECount = 0
 local function getAOECount(range)
@@ -81,6 +88,7 @@ local function getAOECount(range)
         return CachedAOECount
     end
 end
+
 local SpellId = {
     SealVengeance = 31801, SealCommand = 20375, SealWisdom = 20166,
     DivinePlea = 54428, JudgementWisdom = 53408, HammerOfWrath = 48806,
@@ -91,6 +99,7 @@ local SpellId = {
     HolyWrath = 48817,
     BurstMacroPlaceholder = 9999998, AutoAttack = 6603, ArtOfWar = 59578,
 }
+
 local AuraId = {
     Justice = 1299090,
     SanctifiedWrathBuff = 1298723,
@@ -102,8 +111,10 @@ local AuraId = {
     Piety = 1298725,
     DebuffVengeance = 31803
 }
+
 -- 爆发宏
 local BurstMacroBody = "/cast 复仇之怒\\n/cast 狮心(种族特长)\\n/cast 狂暴(种族特长)\\n/cast 血性狂怒(种族特长)\\n/cast 石像形态(种族特长)\\n/use 10\\n/use 13\\n/use 14\\n/use 通用热力工程炸药\\n/use [@player] 萨隆邪铁炸弹"
+
 local ActionList = {
     { SpellId.SealCommand, "spell", "命令圣印" },
     { SpellId.DivinePlea, "spell", "神圣恳求" }, 
@@ -120,6 +131,7 @@ local ActionList = {
     { 6603, "macro", "/startattack" },
     { -112, "macro", "/use 10\\n/use 通用热力工程炸药\\n/use [@player] 萨隆邪铁炸弹", 133035 },
 }
+
 local faction = UnitFactionGroup("player")
 if faction == "Horde" then
     SpellId.SealVengeance = 348704 --改腐蚀
@@ -129,6 +141,7 @@ if faction == "Horde" then
 else
     table.insert(ActionList,{SpellId.SealVengeance,"spell","复仇圣印"})
 end
+
 -- 【五月】平砍计时
 local function GetNextSwingTimeMS()
     local last = SwingTimers.player
@@ -146,7 +159,9 @@ local function GetNextSwingTimeMS()
     end
     return math.floor(remainingSec * 1000 + 0.5)  -- 返回整数毫秒
 end
+
 local meleeGcd = 1.5
+
 local function APLCallback_RetPaladin()
     local win = (tonumber(GetCVar("SpellQueueWindow")) or 400) / 1000
     local gcdRemain = VF_getSpellCD(61304) or 0
@@ -403,6 +418,7 @@ local function APLCallback_RetPaladin()
     end
     return NextSpellID
 end
+
 local Manager = CreateFrame("Frame", "RetPaladinAPLManager", UIParent)
 Manager:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Manager:RegisterEvent("ENCOUNTER_START")
@@ -430,6 +446,7 @@ Manager:SetScript("OnEvent", function(_, event, ...)
             end     
         end
 end)
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_RetPaladin
 aura_env.APLName = "五月XT如夏"

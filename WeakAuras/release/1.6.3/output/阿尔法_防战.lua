@@ -30,7 +30,9 @@ local S = {
     Bloodrage = 2687,          -- 血性狂暴
     BerserkerRage = 18499,     -- 狂暴之怒
     Recklessness = 1719,       -- 鲁莽
+    Charge = 11578,            -- 冲锋
     Intercept = 20252,         -- 拦截
+    Intervene = 3411,          -- 援护
     HeroicThrow = 57755,       -- 英勇投掷
     ShatteringThrow = 64382,   -- 碎裂投掷
     SpellReflection = 23920,   -- 法术反射
@@ -53,16 +55,17 @@ local DebuffId = {
     ShatteringThrow = 64382,
 }
 local BurstMacroBody = "/cast 鲁莽\\n/cast 狮心(种族特长)\\n/cast 狂暴(种族特长)\\n/cast 血性狂怒(种族特长)\\n/cast 石像形态(种族特长)\\n/use 10\\n/use 13\\n/use 14\\n/use 通用热力工程炸药\\n/use [@player] 萨隆邪铁炸弹"
+local lastStanceTime = 0 -- 姿态切换防抖：切换后 1.5s 内不再重复请求
 local ActionList = {
-    { S.ShieldSlam, "macro", "/cast [stance:2] !防御姿态\\n/cast 盾牌猛击\\n/startattack", GetSpellTexture("盾牌猛击") },
-    { S.Revenge, "macro", "/cast [stance:2] !防御姿态\\n/cast 复仇\\n/startattack", GetSpellTexture("复仇") },
-    { S.Devastate, "macro", "/cast [stance:2] !防御姿态\\n/cast 毁灭打击\\n/startattack", GetSpellTexture("毁灭打击") },
-    { S.ThunderClap, "macro", "/cast [stance:2] !防御姿态\\n/cast 雷霆一击", GetSpellTexture("雷霆一击") },
-    { S.DemoralizingShout, "macro", "/cast [stance:2] !防御姿态\\n/cast 挫志怒吼", GetSpellTexture("挫志怒吼") },
+    { S.ShieldSlam, "macro", "/cast 盾牌猛击\\n/startattack", GetSpellTexture("盾牌猛击") },
+    { S.Revenge, "macro", "/cast 复仇\\n/startattack", GetSpellTexture("复仇") },
+    { S.Devastate, "macro", "/cast 毁灭打击\\n/startattack", GetSpellTexture("毁灭打击") },
+    { S.ThunderClap, "macro", "/cast 雷霆一击", GetSpellTexture("雷霆一击") },
+    { S.DemoralizingShout, "macro", "/cast 挫志怒吼", GetSpellTexture("挫志怒吼") },
     { S.SunderArmor, "spell", "破甲" },
-    { S.ShieldBlock, "macro", "/cast [stance:2] !防御姿态\\n/cast 盾牌格挡", GetSpellTexture("盾牌格挡") },
-    { S.ShieldWall, "macro", "/cast [stance:2] !防御姿态\\n/cast 盾墙", GetSpellTexture("盾墙") },
-    { S.LastStand, "macro", "/cast [stance:2] !防御姿态\\n/cast 破釜沉舟", GetSpellTexture("破釜沉舟") },
+    { S.ShieldBlock, "macro", "/cast 盾牌格挡", GetSpellTexture("盾牌格挡") },
+    { S.ShieldWall, "macro", "/cast 盾墙", GetSpellTexture("盾墙") },
+    { S.LastStand, "macro", "/cast 破釜沉舟", GetSpellTexture("破釜沉舟") },
     { S.Taunt, "spell", "嘲讽" },
     { S.HeroicStrike, "spell", "英勇打击" },
     { S.Cleave, "spell", "顺劈斩" },
@@ -70,12 +73,13 @@ local ActionList = {
     { S.BerserkerRage, "spell", "狂暴之怒" },
     { S.SpellReflection, "spell", "法术反射" },
     { S.ShieldBash, "spell", "盾击" },
-    { S.Intercept, "macro", "/cast [stance:1/2] !狂暴姿态\\n/cast 拦截", GetSpellTexture("拦截") },
+    { S.Charge, "macro", "/cast 冲锋", GetSpellTexture("冲锋") },
+    { S.Intercept, "macro", "/cast 拦截", GetSpellTexture("拦截") },
+    { S.Intervene, "macro", "/cast [@focus,help,exists] 援护", GetSpellTexture("援护") },
     { S.HeroicThrow, "spell", "英勇投掷" },
     { S.ShatteringThrow, "spell", "碎裂投掷" },
     { S.BurstMacroID, "macro", BurstMacroBody, GetSpellTexture("鲁莽") },
     { 6603, "macro", "/startattack" },
-    { 2458, "spell", "狂暴姿态" },
     { -112, "macro", "/use 10\\n/use 通用热力工程炸药\\n/use [@player] 萨隆邪铁炸弹", 133035 },
 }
 -- 目标剩余血量百分比
@@ -170,6 +174,9 @@ local function APLCallback_ProtWarrior()
     local srCD = cd(S.SpellReflection)
     local bashCD = cd(S.ShieldBash)
     local htCD = cd(S.HeroicThrow)
+    local chargeCD = cd(S.Charge)
+    local interceptCD = cd(S.Intercept)
+    local interveneCD = cd(S.Intervene)
     local stCD = cd(S.ShatteringThrow)
 
     -- Buffs/Debuffs
@@ -184,11 +191,18 @@ local function APLCallback_ProtWarrior()
 
     -- 脱战准备
     if not inCombat then
-        if not inDefensive then
+        if not inDefensive and (GetTime() - lastStanceTime) > 1.5 then
+            lastStanceTime = GetTime()
             NextSpellID = 71 -- 防御姿态
             return NextSpellID
         end
         if UnitExists("target") and UnitCanAttack("player", "target") and not UnitIsDeadOrGhost("target") then
+            -- 冲锋接近（不在近战范围且冲锋在射程时）
+            if WAParam.config.autoCharge and not inMeleeRange and chargeCD <= win
+                and (IsSpellInRange("冲锋", "target") == 1) then
+                NextSpellID = S.Charge
+                return NextSpellID
+            end
             if tcRem <= 0 and tcCD <= win then
                 NextSpellID = S.ThunderClap
                 return NextSpellID
@@ -205,12 +219,19 @@ local function APLCallback_ProtWarrior()
         return NextSpellID
     end
 
-    -- 战斗自保（优先级最高）
-    if SelfHp < 35 and lsCD <= win then
+    -- 战斗中姿态管理：非防御姿态时切回（拦截等技能切走后自动恢复）
+    if not inDefensive and (GetTime() - lastStanceTime) > 1.5 then
+        lastStanceTime = GetTime()
+        NextSpellID = 71 -- 防御姿态
+        return NextSpellID
+    end
+
+    -- 战斗自保（优先级最高，减伤技能受配置开关控制）
+    if WAParam.config.autoLastStand and SelfHp < 35 and lsCD <= win then
         NextSpellID = S.LastStand
         return NextSpellID
     end
-    if SelfHp < 20 and swCD <= win then
+    if WAParam.config.autoShieldWall and SelfHp < 20 and swCD <= win then
         NextSpellID = S.ShieldWall
         return NextSpellID
     end
@@ -218,6 +239,23 @@ local function APLCallback_ProtWarrior()
     -- 无效目标
     if not UnitExists("target") or UnitIsDeadOrGhost("target") or not UnitCanAttack("player", "target") then
         return S.AutoAttack
+    end
+
+    -- 拦截补位：战斗中目标不在近战范围且拦截在射程内
+    if WAParam.config.autoIntercept and not inMeleeRange and interceptCD <= win
+        and (IsSpellInRange("拦截", "target") == 1) and Rage >= 10 then
+        NextSpellID = S.Intercept
+        return NextSpellID
+    end
+
+    -- 援护：焦点目标被攻击时保护（需焦点且为友军）
+    if WAParam.config.autoIntervene and interveneCD <= win
+        and UnitExists("focus") and UnitIsFriend("player", "focus")
+        and not UnitIsDeadOrGhost("focus") and not UnitIsUnit("focus", "player") then
+        if UnitExists("focus") and UnitIsUnit("focustarget", "target") then
+            NextSpellID = S.Intervene
+            return NextSpellID
+        end
     end
 
     -- 打断
@@ -246,8 +284,8 @@ local function APLCallback_ProtWarrior()
         return NextSpellID
     end
 
-    -- 盾牌格挡保持（战斗姿态防御）
-    if sbDur <= 3 and sbCD <= win then
+    -- 盾牌格挡保持（受配置开关控制）
+    if WAParam.config.autoShieldBlock and sbDur <= 3 and sbCD <= win then
         NextSpellID = S.ShieldBlock
         return NextSpellID
     end

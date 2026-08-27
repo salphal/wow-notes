@@ -61,6 +61,7 @@ local ActionList = {
     {768, "spell", "猎豹形态"},
     {6603, "macro", "/startattack"}
 }
+
 -- 8码内敌人数量
 local function getNearbyCount()
     local count = 0
@@ -79,10 +80,12 @@ local function getNearbyCount()
     end
     return count
 end
+
 local function APLCallback_CatRotation()
     if (GetShapeshiftForm() ~= 3) then
         return 768
     end
+
     local NextSpellID = 6603
     for i = 1, 1 do
         local GCD = VF_getSpellCD(61304)
@@ -312,16 +315,20 @@ local function APLCallback_CatRotation()
     if ((NextSpellID == ActionList[11][1]) and isSingle) then
         NextSpellID = ActionList[6][1]
     end
+
     return NextSpellID
 end
+
 local function intoCatForm()
     SetCVar("SpellQueueWindow", 200)
     CastWindow = (tonumber(GetCVar("SpellQueueWindow")) or 400)/1000
 end
+
 local function leaveCatForm()
     SetCVar("SpellQueueWindow", 400)
     CastWindow = (tonumber(GetCVar("SpellQueueWindow")) or 400)/1000
 end
+
 local function onCLEUEvent(event)
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
         local _, subEvent, _, srcGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
@@ -348,6 +355,7 @@ local function onCLEUEvent(event)
         end
     end
 end
+
 local Manager = CreateFrame("Frame","WLKCatAPLManager", UIParent)
 Manager:SetScript("OnShow", intoCatForm)
 Manager:SetScript("OnHide", leaveCatForm)
@@ -361,6 +369,7 @@ RegisterStateDriver(Manager, "visibility", "[stance:3] show; hide")
 if(GetShapeshiftForm() == 3) then
     intoCatForm()
 end
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_CatRotation
 aura_env.APLName = "猫咪猛挠"

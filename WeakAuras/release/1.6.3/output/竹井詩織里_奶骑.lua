@@ -42,6 +42,7 @@ function (event, ...)
     end
     return true
 end
+
 -- UNIT_SPELLCAST_SENT,UNIT_SPELLCAST_SUCCEEDED,UNIT_SPELLCAST_FAILED,UNIT_SPELLCAST_INTERRUPTED
 
 -- ===== actions.init 自定义代码 =====
@@ -79,15 +80,18 @@ local C = {
     autoCastBeaconOfLightToFocus = true, -- 自动对焦点释放圣光道标 || 是否在道标结束后自动对焦点目标释放圣光道标
     beaconOfLightEarlySecond = 1 -- 提前几秒释放圣光道标 || 在圣光道标结束前，设定提前几秒释放圣光道标
 }
+
 if aura_env.config then
     for k, v in pairs(aura_env.config) do
         C[k] = v
     end
 end
+
 -- 确保闪现的阈值不会高于大圣光
 if C.flashOfLightHealthDiff >= C.holyLightHealthDiff then
     C.flashOfLightHealthDiff = C.holyLightHealthDiff / 2
 end
+
 local DebuffTable = {
     [66331] = true, -- 穿刺
     [66406] = true, -- 狗头人上身
@@ -137,21 +141,26 @@ local DebuffTable = {
     [68980] = true, -- 收割灵魂
     [72754] = true -- 污染 
 }
+
 local function spellName(id, fallback)
     local name = GetSpellInfo(id)
     return name or fallback
 end
+
 _G.ShioriPaladinLastCastUnits = _G.ShioriPaladinLastCastUnits or {
     LastCastHolyLightUnit = "",
     LastCastFlashOfLightUnit = "",
     HolyLightGUID = "",
     FlashOfLightGUID = ""
 }
+
 local spellNames = {}
+
 spellNames.HL = spellName(S.HL, "圣光术")
 spellNames.FOL = spellName(S.FOL, "圣光闪现")
 spellNames.BEACON = spellName(S.BEACON, "圣光道标")
 spellNames.AUTO_ATTACK = spellName(S.AUTO_ATTACK, "攻击")
+
 -- 构建目标单位池
 local units = {"player", "focus"} -- 奶骑特别需要焦点目标来挂道标
 for i = 1, 4 do
@@ -160,10 +169,12 @@ end
 for i = 1, (C.healerSupport40Battleground and 40 or 25) do
     table.insert(units, "raid" .. i)
 end
+
 -- 定义初始化的 Action ID (使用 8380000 避免与奶德 8080000 冲突)
 local initializedId = 8380000
 local actionIds = {}
 local actionList = {}
+
 local function addUnitMacro(key, spellId, macroSpellName, unit, iconId)
     actionIds[key] = actionIds[key] or {}
     local id = initializedId + (#actionList + 1)
@@ -179,6 +190,7 @@ local function addUnitMacro(key, spellId, macroSpellName, unit, iconId)
     
     table.insert(actionList, {id, "macro", macroText, iconId or GetSpellTexture(spellId)})
 end
+
 -- 为所有单位循环生成圣光术、闪现、道标宏
 for _, unit in ipairs(units) do
     addUnitMacro(SKey.HL, S.HL, spellNames.HL, unit)
@@ -188,6 +200,7 @@ end
 -- 生成一个空闲降级动作 (NOOP)
 actionIds.NOOP = initializedId + 200000
 table.insert(actionList, {actionIds.NOOP, "macro", "/stopmacro\\n/startattack", GetSpellTexture(S.AUTO_ATTACK)})
+
 local function hasBuff(unit, spellId, fallbackName, isFromPlayer)
     local expectedName = GetSpellInfo(spellId) or fallbackName
     if not expectedName or expectedName == "" then
@@ -201,6 +214,7 @@ local function hasBuff(unit, spellId, fallbackName, isFromPlayer)
     end
     return hasBuff
 end
+
 local function hasDebuff(unit, spellId, fallbackName, isFromPlayer)
     local expectedName = GetSpellInfo(spellId) or fallbackName
     if not expectedName or expectedName == "" then
@@ -214,6 +228,7 @@ local function hasDebuff(unit, spellId, fallbackName, isFromPlayer)
     end
     return hasDebuff
 end
+
 local function spellReady(spellId)
     local start, duration, enabled = GetSpellCooldown(spellId)
     if enabled == 0 then
@@ -230,6 +245,7 @@ local function spellReady(spellId)
     end
     return true
 end
+
 local function inRange(unit, spellId)
     if unit == "player" then
         if UnitIsDeadOrGhost(unit) then
@@ -255,9 +271,11 @@ local function inRange(unit, spellId)
     end
     return true
 end
+
 local function isMoving()
     return GetUnitSpeed("player") > 0
 end
+
 local function unitHasTOCDebuff(unit)
     if C.supportSpecialDebuff == false then
         return false
@@ -277,9 +295,11 @@ end
 local function unitHasIncinerateFleshDebuff(unit)
     return C.supportSpecialDebuff and hasDebuff(unit, 66237, "血肉成灰", false)
 end
+
 local function unitHasBeaconOfLightFromPlayer(unit)
     return hasBuff(unit, 53563, "圣光道标", true)
 end
+
 local function getUnitRoleType(unit, maxUnit)
     local _, class = UnitClass(unit)
     local powerType = UnitPowerType(unit)
@@ -322,6 +342,7 @@ local function getUnitRoleType(unit, maxUnit)
     end
     return Role
 end
+
 local function calcUnitHealthDiff(unit)
     if not UnitExists(unit) then
         return 0
@@ -343,9 +364,11 @@ local function calcUnitHealthDiff(unit)
     end
     return unitHealthDiff
 end
+
 local function holyLightUsable(unit, unitHealthDiff)
     return unitHealthDiff >= C.holyLightHealthDiff and not isMoving()
 end
+
 local function flashOfLightUsable(unit, unitHealthDiff, directCheckAtLeastOneBloodCutDown)
     directCheckAtLeastOneBloodCutDown = directCheckAtLeastOneBloodCutDown or false
     if directCheckAtLeastOneBloodCutDown then
@@ -353,6 +376,7 @@ local function flashOfLightUsable(unit, unitHealthDiff, directCheckAtLeastOneBlo
     end
     return unitHealthDiff >= C.flashOfLightHealthDiff and not isMoving()
 end
+
 local function beaconOfLightToFocusUsable(beaconOfLightBuffFromPlayerUnit)
     if not C.autoCastBeaconOfLightToFocus then
         return false
@@ -370,6 +394,7 @@ local function beaconOfLightToFocusUsable(beaconOfLightBuffFromPlayerUnit)
     local unit = "focus"
     return inRange(unit, S.BEACON)
 end
+
 -- 一个快捷的获取最终 Action ID 的函数
 local function action(key, unit)
     if unit then
@@ -377,12 +402,14 @@ local function action(key, unit)
     end
     return actionIds[key]
 end
+
 local function doFinalCheck(unit, spellKey)
     if unit == "" or spellKey == "" then
         return action("NOOP")
     end
     return action(spellKey, unit)
 end
+
 local function runSolo()
     local unit = "player"
     if not inRange(unit, S.FOL) then
@@ -401,6 +428,7 @@ local function runSolo()
     
     return doFinalCheck(unit, spellKey)
 end
+
 local function runParty()
     local maxPartyHealthPlayerUnit = ""
     local maxParthHealthPlayerHealth = 0
@@ -561,6 +589,7 @@ local function runParty()
     
     return doFinalCheck(unitToCast, spellKey)
 end
+
 local function runRaid()
     local maxRaidHealthPlayerUnit = ""
     local maxRaidHealthPlayerHealth = 0
@@ -830,6 +859,7 @@ local function runRaid()
     
     return doFinalCheck(unitToCast, spellKey)
 end
+
 local function callbackHealer()
     if select(2, UnitClass("player")) ~= "PALADIN" then
         return action("NOOP")
@@ -843,6 +873,7 @@ local function callbackHealer()
     return runRaid()
     
 end
+
 --粗糙的性能优化，可能会导致非GCD技能延后
 local lastActionID = 0
 local lastTime = 0
@@ -856,6 +887,8 @@ local function APLCallback()
     end
     return lastActionID
 end
+
+
 aura_env.APLActionList = actionList
 aura_env.APLCallback = APLCallback
 aura_env.APLName = "竹井詩織里"

@@ -11,9 +11,12 @@ regionType: empty
 作者：虎呗特
 优化融合：碎冰之舞
 ]]
+
 -- 版本和全局表初始化
 if(WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC) then return end
 if APL_FrostMage_TITAN then return end; APL_FrostMage_TITAN = true
+
+
 local function splitStr(str, sep)
     local result = {}
     for part in string.gmatch(str, "[^" .. sep .. "]+") do
@@ -21,10 +24,12 @@ local function splitStr(str, sep)
     end
     return result
 end
+
 local function getItemCountInBag(itemId)
     local count = GetItemCount(itemId, false, false)
     return count or 0
 end
+
 local function getMyBuff(buffId)
     local buffName, icon, count, debuffType, duration, expirationTime, source, isStealable, nameplateShowPersonal, spellId = WA_GetUnitBuff("player", buffId, "HARMFUL")
     if (buffName ~= nil) then
@@ -36,6 +41,7 @@ local function getMyBuff(buffId)
     end
     return 0
 end
+
 local function getMyDebuff(buffId)
     local buffName, icon, count, debuffType, duration, expirationTime, source, isStealable, nameplateShowPersonal, spellId = WA_GetUnitDebuff("player", buffId, "HARMFUL|PLAYER")
     if (buffName ~= nil) then
@@ -47,6 +53,7 @@ local function getMyDebuff(buffId)
     end
     return 0
 end
+
 local function getHPPercent(unit)
     local currentHP = UnitHealth(unit)
     local maxHP = UnitHealthMax(unit)
@@ -57,11 +64,13 @@ local function getHPPercent(unit)
     hpPercent = math.floor(hpPercent * 10) / 10 
     return math.max(0, math.min(100, hpPercent))
 end
+
 local function getManaPercent()
     local mana = UnitPower("player", 0)
     local maxMana = UnitPowerMax("player", 0)
     return maxMana > 0 and (mana / maxMana) * 100 or 100
 end
+
 local function getBuffRankByPlayer(unit, buffname)
     if (WA_GetUnitBuff) then
         local name, _, rank, _, _, _, source = WA_GetUnitBuff(unit, buffname)
@@ -71,6 +80,7 @@ local function getBuffRankByPlayer(unit, buffname)
     end
     return 0
 end
+
 local function getAOECount(range)
     local count = 0
     for i = 1, 40 do
@@ -84,6 +94,7 @@ local function getAOECount(range)
     end
     return count
 end
+
 -- 目标NPC_ID列表
 local TARGET_NPC_IDS = {
     -- 测试
@@ -163,6 +174,7 @@ local TARGET_NPC_IDS = {
     14986, --妖术师金度.金度之影
     --11357, --哈卡.哈卡之子
 }
+
 local function checkUnit(unit)
     if not UnitExists(unit) then
         return false
@@ -187,6 +199,7 @@ local function checkUnit(unit)
     end
     return false
 end
+
 local function isTargetBossOrInNpcList()
     if checkUnit("target") then
         return true
@@ -196,6 +209,7 @@ local function isTargetBossOrInNpcList()
     end
     return false
 end
+
 local function isBoss()
     if UnitLevel("target") == -1 then
         return true
@@ -203,6 +217,7 @@ local function isBoss()
         return false
     end
 end
+
 local function getAOECountBoss(range)
     local count = 0
     for i = 1, 40 do
@@ -232,6 +247,7 @@ local function getAOECountBoss(range)
     end
     return count
 end
+
 local function getCastingTime()
     local _, _, _, ctime1, ctime2, _, _, _, spellID = CastingInfo()
     if (ctime1 == nil) then
@@ -243,7 +259,9 @@ local function getCastingTime()
         return (ctime2 - GetTime() * 1000) / 100
     end
 end
+
 local WAParam = aura_env
+
 local Config = {
     -- 版本控制
     WowVersion = WOW_PROJECT_WRATH_CLASSIC,
@@ -308,6 +326,7 @@ local Config = {
         shipin2 =  {ID = 14, Name = 14},
     },
 }
+
 -- 核心技能列表
 local ActionList = {
     {Config.Spells.hanbingjian.ID, "macro", Config.Spells.hanbingjian.Name,GetSpellTexture("寒冰箭")},
@@ -327,6 +346,8 @@ local ActionList = {
     {Config.Spells.rongyanhujia.ID, "spell", Config.Spells.rongyanhujia.Name},
     {Config.Spells.falixiqu.ID, "spell", Config.Spells.falixiqu.Name},
 }
+
+
 -- 核心输出回调函数
 local function APLCallback_FrostMageRotation()
     local NextSpellID = Config.Spells.hanbingjian.ID
@@ -388,10 +409,12 @@ local function APLCallback_FrostMageRotation()
     -- DeBuff时长获取
     local jinpilijinDeBuff = math.max(0, getMyDebuff(Config.Debuffs.jinpilijin.ID))
     local xinmanyizuDeBuff = math.max(0, getMyDebuff(Config.Debuffs.xinmanyizu.ID))
+
     -- 急速和施法时间计算
     --local haste = UnitSpellHaste("player") or 0
     local FrostboltCT = ((select(4, GetSpellInfo("寒冰箭")) or 2.2) / 1000)
     --FrostboltCT = FrostboltCT / (1 + haste / 100)
+
     -- 法力青玉
     if not InCombat and faliqingyuCount <= 0 then
         NextSpellID = Config.Spells.falibaoshi.ID
@@ -501,15 +524,18 @@ local function APLCallback_FrostMageRotation()
             NextSpellID = Config.Spells.shuanghuozhijian.ID
             return NextSpellID
         end
+
         -- 急速阈值以下卡CD吹风
         if bingzhuishuCD <= Config.Thresholds.castWindow and MaxRange <= 10 and lengfengCurrPoints >= 1 and FrostboltCT > 1.2 then
             NextSpellID = Config.Spells.bingzhuishu.ID
             return NextSpellID
         end
+
     end
     -- 兜底寒冰箭
     return NextSpellID
 end
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_FrostMageRotation
 aura_env.APLName = "虎呗特冰法"

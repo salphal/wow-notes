@@ -9,16 +9,21 @@ regionType: empty
 --[[
   生存猎 APL 
   贡献人：五月狂飙
+
 ]]
+
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_SUR_HUNTER_WLK then return end APL_SUR_HUNTER_WLK = true
+
 local cfg = aura_env.config or {}
 local CurrentEncounterID = 0
+
 -- 关闭自动爆发BOSS名单：629诺森德猛兽 637阵营冠军 
 local NoAutoBrustlist = {
     [629] = true,
     [637] = true
 }
+
 -- 目标剩余血量百分比
 local function TargetHpPct(unit)
     unit = unit or "target"
@@ -34,12 +39,14 @@ local function TargetHpPct(unit)
     hpPercent = math.floor(hpPercent * 10) / 10
     return math.max(0, math.min(100, hpPercent))
 end
+
 -- 玩家剩余蓝量百分比
 local function PlayerManaPct()
     local mana = UnitPower("player", 0)
     local maxMana = UnitPowerMax("player", 0)
     return maxMana > 0 and (mana / maxMana) * 100 or 100
 end
+
 -- 急速射击爆发宏
 local BurstMacro = "/cast 狂暴(种族特长)\\n/cast 血性狂怒(种族特长)\\n/cast 石像形态(种族特长)\\n/cast 野性呼唤\\n/use 10\\n/use 13\\n/use 14\\n/use [group:raid]速度药水\\n/cast 急速射击"
 -- 434宏
@@ -51,6 +58,7 @@ local ExpTrapMacro = "/cast [@cursor] 陷阱发射器：爆炸陷阱\\n/use [@cu
 local PetMarco = "/cast [@pet,dead] 复活宠物\\n/castsequence [nopet] reset=2 召唤宠物,复活宠物"
 -- 杀戮宏
 local KillShotMarco = "/cast 狂暴(种族特长)\\n/cast 血性狂怒(种族特长)\\n/cast 石像形态(种族特长)\\n/cast 杀戮命令\\n/cast 野性呼唤\\n/use 13\\n/use 14\\n/cast 杀戮射击"
+
 local ActionList = {
     {-112, "item", 10},
     { 61847, "spell", "龙鹰守护" },
@@ -70,6 +78,7 @@ local ActionList = {
     { 883, "macro", PetMarco, GetSpellTexture("召唤宠物") },   
     { 9999994, "macro", KillShotMarco, GetSpellTexture("杀戮射击") }, 
 }
+
 local function APLCallback_RetHunter()
     --- 读条优先
     local spellId = select(10, UnitCastingInfo("player"))
@@ -220,6 +229,7 @@ local function APLCallback_RetHunter()
     end
     return NextSpellID or 75
 end
+
 local Manager = CreateFrame("Frame", "RetHunterAPLManager", UIParent)
 Manager:RegisterEvent("ENCOUNTER_START")
 Manager:RegisterEvent("ENCOUNTER_END")
@@ -233,6 +243,7 @@ Manager:SetScript("OnEvent", function(_, event, ...)
             CurrentEncounterID = 0
         end
 end)
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_RetHunter
 aura_env.APLName = "五月狂飙生存"

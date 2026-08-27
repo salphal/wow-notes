@@ -13,16 +13,20 @@ regionType: empty
 贡献人：B站 老堂（时光1-堂吉诃德）
 代码整合：念秋
 ]]
+
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_FROSTDK_TITAN_NIANQIU then return end APL_FROSTDK_TITAN_NIANQIU = true
+
 local WAParam = aura_env
 WAParam.config = WAParam.config or {}
+
 local hasNecrosis = false--是否点出骨疽，判断冰邪/冰血天赋
 local hasDiseaseGlyph = true--是否插了疾病雕文
 local hasFSGlyph = true--是否插了冰打雕文
 local DiseaseDurMax = 15--最大疾病时长，按照蔓延天赋修改
 local LastAOETime = 0--最近一次进入AOE状态的时间
 local LastPestilenceTime = 0--最近一次使用传染的时间
+
 local ID = {
     Obliterate = 51425,
     FrostStrike = 55268,
@@ -45,6 +49,7 @@ local ID = {
     FrostFever = 55095,--冰病
     BloodPlague = 55078,--暗病
 }
+
 -- ==================== ActionList ====================
 local ActionList = {
     {ID.Obliterate, "macro", "/cast [nochanneling] 湮没\\n/petattack [combat]", GetSpellTexture("湮没")},
@@ -65,6 +70,7 @@ local ActionList = {
     {ID.DeathDecay, "macro", "/cast [@player] 枯萎凋零", GetSpellTexture("枯萎凋零")},
     {6603, "macro", "/startattack\\n/petattack [combat]"},
 }
+
 local function getRuneCD(index)
     local start, dur, isReady = GetRuneCooldown(index)
     if isReady then
@@ -74,6 +80,7 @@ local function getRuneCD(index)
     end
     return 1
 end
+
 local function TargetIsCasting()
     local name, _, _, _, _, _, _, notInterruptible = UnitCastingInfo("target")
     if name and not notInterruptible then
@@ -85,6 +92,7 @@ local function TargetIsCasting()
     end
     return false
 end
+
 -- 8码内敌人数量
 local function getNearbyCount()
     local count = 0
@@ -103,6 +111,7 @@ local function getNearbyCount()
     end
     return count
 end
+
 -- ==================== 主回调函数 ====================
 local function APLCallback()
     local now = GetTime()
@@ -154,6 +163,7 @@ local function APLCallback()
             end
         end
     end
+
     --战斗外/空闲状态
     if not UnitAffectingCombat("player") then
         if GetShapeshiftForm() ~= 1 then
@@ -167,6 +177,7 @@ local function APLCallback()
         end
         return 6603
     end
+
     --无效目标
     if not UnitExists("target") or UnitIsDeadOrGhost("target") or not UnitCanAttack("player", "target") then
         return 6603
@@ -207,6 +218,7 @@ local function APLCallback()
             return ID.PlagueStrike
         end
     end
+
     --BOSS战中高优先级爆发
     if WAParam.config.autoBurst and inBossFight and inMeleeRange then
         if UnbreakArmorCD <= CastWindow and DiseaseDur > PestilenceThreshold then
@@ -216,20 +228,24 @@ local function APLCallback()
             return ID.FrostWyrm
         end
     end
+
     --近战范围外有白霜就直接吹风打掉
     if not inMeleeRange then
         if FreezingFogDur > 0 and HowlingBlastCD <= CastWindow then
             return ID.HowlingBlast
         end
     end
+
     --能量临近溢出的冰打
     if RunicPower >= RunicPowerMax-20 and DiseaseDur > 0 then
         return ID.FrostStrike
     end
+
     --白霜如果迟迟等不到杀戮机器就先打掉吹风
     if HowlingBlastCD <= CastWindow and FreezingFogDur > 0 and FreezingFogDur <= 3 then
         return ID.HowlingBlast
     end
+
     --鲜血分流条件：
     --1、有疾病雕文且无血符文、疾病持续时间不足阈值
     --2、刚放完铜墙铁壁、有邪符文但是缺少冰符文的时候允许分流打湮没
@@ -238,6 +254,7 @@ local function APLCallback()
             or (UnbreakArmorDur > 10 and UnbreakArmorCD > 50 and URune > 0 and FRune <= 0)) then
         return ID.BloodTap
     end
+
     --AOE/单体处理
     if AOECount >= 3 then
         --记录刚从单体进入AOE状态的时间，判断是否立即传染
@@ -271,15 +288,18 @@ local function APLCallback()
             return ID.Obliterate
         end
     end
+
     --疾病充裕，有血符文/双死符文/疾病大于符文循环时，打掉血打
     if DiseaseDur > PestilenceThreshold and RunicPower < RunicPowerMax-10 and BloodStrikeCD <= CastWindow
         and (BRune > 0 or DRune >= 2 or DiseaseDur > 10)then
         return ID.BloodStrike
     end
+
     --实在没技能放就不等杀戮直接白霜吹，不浪费公共CD和机会成本
     if FreezingFogDur > 0 and HowlingBlastCD <= CastWindow then
         return ID.HowlingBlast
     end
+
     --BOSS战中低优先级爆发
     if WAParam.config.autoBurst and inBossFight and inMeleeRange and TargetDeadTime > 12 then
         --符文全空且双血转化为双死或者吃到嗜血，才用符文武器刷新
@@ -292,6 +312,7 @@ local function APLCallback()
             return ID.RaiseDead
         end
     end
+
     --号角
     if WinterHornCD <= CastWindow and RunicPower < RunicPowerMax-10 then
         return ID.WinterHorn
@@ -301,9 +322,11 @@ local function APLCallback()
     if not isFrostWyrmSoon and RunicPower >= FSRunicPower then
         return ID.FrostStrike
     end
+
     --兜底
     return 6603
 end
+
 local Manager = CreateFrame("Frame")
 Manager:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Manager:RegisterEvent("PLAYER_REGEN_DISABLED")
@@ -349,6 +372,7 @@ Manager:SetScript("OnEvent", function(_, evt)
         LastPestilenceTime = 0
     end
 end)
+
 WAParam.APLActionList = ActionList
 WAParam.APLCallback = APLCallback
 WAParam.APLName = "共创龙喷冰"
@@ -356,3 +380,443 @@ WAParam.APLName = "共创龙喷冰"
 -- ===== actions.init 加载时自定义代码 =====
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 VF_registerAPL(aura_env)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -13,8 +13,10 @@ regionType: empty
 ]]
 if(WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC) then return end
 if APL_PRIEST_SHADOW_CATGIRL_WLK then return end; APL_PRIEST_SHADOW_CATGIRL_WLK = true
+
 local WAParam = aura_env
 local CastWindow = (tonumber(GetCVar("SpellQueueWindow")) or 400)/1000
+
 local S = {
     VampiricTouch   = 48160,
     DevouringPlague = 48300,
@@ -31,9 +33,11 @@ local S = {
     Spirit          = 48073,
     SpiritAlt       = 48074,
 }
+
 -- 断鞭版用偏移ID，和nochanneling版区分
 local CLIP_OFFSET = 100000
 local FOCUS_OFFSET = 200000
+
 -- ActionList: {动作ID, 类型, 名称/宏, [图标]}
 -- 每个技能两条：nochanneling版 + 断鞭版
 local ActionList = {
@@ -80,6 +84,8 @@ local ActionList = {
     {S.VampiricEmbrace, "spell", "吸血鬼的拥抱"},
     {S.Spirit, "spell", "神圣之灵"},
 }
+
+
 -- 判断是否有可用的爆发技能
 local function HasBurstReady()
     -- 手套饰品就绪
@@ -88,6 +94,7 @@ local function HasBurstReady()
         or VF_getItemCD(14) <= 0 then
         return true
     end
+
     -- 种族技能就绪
     if VF_getSpellCD(20599) <= 0-- 狮心
         or VF_getSpellCD(26297) <= 0-- 狂暴
@@ -97,18 +104,24 @@ local function HasBurstReady()
     
     return false
 end
+
 local P5SuitActive = false
+
 -- 渊升空追踪：0=正常，1=需要插疫病，2=已推荐过疫病
 local SWALiftoffDP = 0
 local SWALiftoffTime = 0
+
 -- 痛暴击快照（需在事件处理器之前声明，否则事件中写入全局变量）
 local PainCritRecorded = 0
+
 -- 焦点触锁/痛锁
 local FocusPainCritRecorded = 0
+
 -- 渊引导中焦点切换：0=idle, 1=/target focus, 2=/targetlasttarget, 3=locked
 local SWAFocusPhase = 0
 local SWAFocusLockTime = 0
 local SWAFocusPhase2Time = 0  -- Phase 2 进入时间
+
 -- 鞭笞跳数追踪
 local MF_DMG_ID = 58381
 local MFTicks = 0
@@ -117,6 +130,7 @@ local HighPrioSinceTime = 0  -- 非MF推荐首次出现的时间
 local MFStartTime = 0        -- MF引导开始时间
 local MFHasteRatio = 1       -- MF引导时的急速倍率
 local MFLockUntil = 0      -- MF引导结束前禁止再推荐MF
+
 local EventFrame = CreateFrame("Frame", nil, UIParent)
 EventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 EventFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
@@ -191,25 +205,34 @@ EventFrame:SetScript("OnEvent", function(self, e, ...)
         P5SuitActive = false
     end
 end)
+
+
 -- ==========================================
 -- 断鞭管理器（事件驱动：追踪鞭笞跳数）
 -- ==========================================
+
 -- 判断当前鞭笞引导是否已过安全跳数
 -- 返回: "none"(未在引导) / "wait"(还需继续等) / "clip"(可以断鞭)
 local function ClipDecision()
     local channelName, _, _, channelStartMS, channelEndMS = UnitChannelInfo("player")
     if not channelName then return "none" end
+
     if channelName ~= "精神鞭笞" then return "none" end
+
     if not channelEndMS then return "none" end
+
     -- 服务器时间反算，3跳均分
     local tickInterval = (channelEndMS - channelStartMS) / 3000
     local remaining = (channelEndMS - GetTime() * 1000) / 1000
+
     -- 剩余 < 1 跳 → 第 2 跳已完成，可以断鞭
     if remaining < tickInterval then
         return "clip"
     end
+
     return "wait"
 end
+
 -- ==========================================
 -- 优先级逻辑（纯决策，不管引导状态）
 -- ==========================================
@@ -237,6 +260,7 @@ local function DecidePriority()
     local SWDCD = math.max(VF_getSpellCD(S.ShadowWordDeath)-GCD,0)
     local SWACD = math.max(VF_getSpellCD(S.ShadowWordAbyss)-GCD,0)
     local VTouchCT = (select(4, GetSpellInfo("吸血鬼之触")) / 1000)
+
     if castingSpellName == "心灵震爆" then
         isCombat = true
     elseif castingSpellName == "吸血鬼之触" then
@@ -275,10 +299,12 @@ local function DecidePriority()
             SWAFocusPhase = 0
         end
     end
+
     -- 暗影形态（最高优先级，无论战斗/读条/引导）
     if (VF_getBuff("player", 15473, "HELPFUL|PLAYER") or 0) == 0 then
         return S.Shadowform
     end
+
     -- 补buff（战斗外，缺了或剩余<10分钟时提醒，不需要目标）
     if not isCombat then
         local ifDur = VF_getBuff("player", S.InnerFire, "HELPFUL|PLAYER") or 0
@@ -297,9 +323,11 @@ local function DecidePriority()
             return S.MindBlast
         end
     end
+
     if not UnitExists("target") or not UnitCanAttack("player", "target") then
         return 6603
     end
+
     -- P0: 升空窗口
     if SWALiftoffDP > 0 then
         if SWALiftoffTime > 0 and now - SWALiftoffTime > 0.8 then
@@ -325,24 +353,29 @@ local function DecidePriority()
             return 6603
         end
     end
+
     -- P0.5: 痛快断时鞭笞最高优先
     if PainDur > 0 and PainDur < 2.5 then
         return S.MindFlay
     end
+
     -- P0.6: 暗言术：灭（死神慈悲<2秒时最高优先，断鞭版）
     if SWDCD <= CastWindow and ReaperDur > 0 and ReaperDur < 2 then
         return S.ShadowWordDeath
     end
+
     -- P1: 暗言术：痛（只在暗影交织5层时施放/刷新）
     if SWStack == 5 then
         if PainDur <= 0 or currentCrit > PainCritRecorded + 1 then
             return S.ShadowWordPain
         end
     end
+
     -- P1.5: 焦点痛快断时焦点鞭笞续痛
     if hasFocus and FocusPainDur > 0 and FocusPainDur < 4 then
         return S.MindFlay + FOCUS_OFFSET
     end
+
     -- P1.6: 焦点暗言术：痛（只在暗影交织5层时施放/刷新）
     if hasFocus and SWStack == 5 then
         if FocusPainDur == 0 then
@@ -351,6 +384,7 @@ local function DecidePriority()
             return S.ShadowWordPain + FOCUS_OFFSET
         end
     end
+
     -- P1.7: 渊即将就绪，预判焦点dot是否够撑过渊（暗影交织5）
     if SWACD <= 2 then
         if SWStack == 5 then
@@ -375,6 +409,7 @@ local function DecidePriority()
             end
         end
     end
+
     -- P2: 暗言术：渊（暗影交织5 + CD就绪，仅主目标）
     if SWACD <= CastWindow then
         if SWStack == 5 then
@@ -403,10 +438,12 @@ local function DecidePriority()
     if P5SuitActive and SWDCD <= CastWindow then
         return S.ShadowWordDeath
     end
+
     -- P3: 暗影魔
     if WAParam.config.auto_shadow_fiend and inBossFight and isCombat and math.max(VF_getSpellCD(S.ShadowFiend)-GCD) <= CastWindow then
         return S.ShadowFiend
     end
+
     -- P4: 吸血鬼之触（正常刷新）& 爆发
     if VTouchDur <= VTouchCT then
         if WAParam.config.autoBurst and inBossFight and HasBurstReady() then
@@ -415,24 +452,29 @@ local function DecidePriority()
             return S.VampiricTouch
         end
     end
+
     -- P4.5: 焦点吸血鬼之触
     if hasFocus and FocusVTDur <= VTouchCT then
         return S.VampiricTouch + FOCUS_OFFSET
     end
+
     -- P4: 噬灵疫病（渊CD就绪时跳过，升空窗口会自动插疫病）
     if SWACD > CastWindow then
         if DPDur == 0 then
             return S.DevouringPlague
         end
     end
+
     -- P5: 心灵震爆
     if VF_getSpellCD(S.MindBlast) <= CastWindow then
         return S.MindBlast
     end
+
     -- P6: 暗言术：灭（死神慈悲buff时使用）
     if SWDCD <= CastWindow and ReaperDur > 0 then
         return S.ShadowWordDeath
     end
+
     -- P7: 精神鞭笞
     if VF_getSpellCD(S.MindFlay) <= CastWindow and castingSpellName == nil then
         -- MF引导刚结束300ms内，如果交织!=5，等buff更新，避免P7抢先于P1
@@ -441,13 +483,16 @@ local function DecidePriority()
         end
         return S.MindFlay
     end
+
     return 6603
 end
+
 -- ==========================================
 -- 主回调：优先级 + 断鞭管理
 -- ==========================================
 local function APLCallback_ShadowPriest()
     local spell = DecidePriority()
+
     -- 不需要断鞭判断的技能直接返回
     if spell == 6603 then
         return spell
@@ -456,19 +501,24 @@ local function APLCallback_ShadowPriest()
         HighPrioSinceTime = 0
         return spell
     end
+
     --有慈悲的情况替换成专注灭
     if VF_getBuff("player", 1303678, "HELPFUL|PLAYER") > 0 and VF_getSpellCD(S.InnerFocus) <= 0 and spell == S.ShadowWordDeath then
         spell = S.InnerFocus
     end
+
     -- 记录非MF推荐首次出现的时间
     if HighPrioSinceTime == 0 then
         HighPrioSinceTime = GetTime()
     end
+
     -- 需要断鞭判断的技能（VT/DP/MB/SWD/SWP/SWA）
     local clip = ClipDecision()
+
     if clip ~= "clip" then
         return spell
     end
+
     -- clip: 已过2跳，只有第2跳之前推荐的技能才断鞭
     local _, _, _, channelStartMS, channelEndMS = UnitChannelInfo("player")
     local tickInterval = (channelEndMS - channelStartMS) / 3000
@@ -479,9 +529,11 @@ local function APLCallback_ShadowPriest()
         return spell
     end
 end
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_ShadowPriest
 aura_env.APLName = "凌小猫粮"
+
 
 -- ===== actions.init 加载时自定义代码 =====
 if(WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC) then return end

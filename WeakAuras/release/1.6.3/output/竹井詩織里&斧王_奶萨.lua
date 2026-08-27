@@ -44,7 +44,12 @@ function (event, ...)
     
     return true
 end
+
 -- UNIT_SPELLCAST_SENT,UNIT_SPELLCAST_SUCCEEDED,UNIT_SPELLCAST_FAILED,UNIT_SPELLCAST_INTERRUPTED
+
+
+
+
 
 -- ===== actions.init 自定义代码 =====
 --[[
@@ -60,12 +65,14 @@ local S = {
     RIPTIDE = 61301, -- 激流 (Riptide)
     NS = 16188 -- 自然迅捷 (Nature's Swiftness)
 }
+
 local SKey = {
     SWIFT_CH = "SWIFT_CH", -- 迅捷治疗链
     CH = "CH", -- 常规治疗链
     RIPTIDE = "RIPTIDE", -- 激流
     ES = "ES" -- 大地之盾
 }
+
 local C = {
     swiftHealthPercent = 35, -- 对应旧版 LeftToSwift：低于此血量触发迅捷链应急
     riptideHealthPercent = 80, -- 对应旧版 LeftToTorrent：激流血线
@@ -76,11 +83,13 @@ local C = {
     healerSupport40Battleground = false,
     supportSpecialDebuff = false
 }
+
 if aura_env.config then
     for k, v in pairs(aura_env.config) do
         C[k] = v
     end
 end
+
 local DebuffTable = {
     [66331] = true, -- 穿刺
     [66406] = true, -- 狗头人上身
@@ -130,21 +139,25 @@ local DebuffTable = {
     [68980] = true, -- 收割灵魂
     [72754] = true -- 污染 
 }
+
 local function spellName(id, fallback)
     local name = GetSpellInfo(id)
     return name or fallback
 end
+
 _G.ShioriShamanLastCastUnits = _G.ShioriShamanLastCastUnits or {
     LastCastCHUnitName = "",
     LastCastRiptideUnitName = "",
     CHGUID = nil,
     RiptideGUID = nil
 }
+
 local spellNames = {}
 spellNames.NS = spellName(S.NS, "自然迅捷")
 spellNames.CH = spellName(S.CH, "治疗链")
 spellNames.RIPTIDE = spellName(S.RIPTIDE, "激流")
 spellNames.ES = spellName(S.ES, "大地之盾")
+
 local units = {"player", "focus"}
 for i = 1, 4 do
     table.insert(units, "party" .. i)
@@ -152,9 +165,11 @@ end
 for i = 1, (C.healerSupport40Battleground and 40 or 25) do
     table.insert(units, "raid" .. i)
 end
+
 local initializedId = 8790000 -- 奶萨专属基准ID
 local actionIds = {}
 local actionList = {}
+
 local function addUnitMacro(key, spellId, macroSpellName, unit, iconId)
     actionIds[key] = actionIds[key] or {}
     local id = initializedId + (#actionList + 1)
@@ -169,14 +184,17 @@ local function addUnitMacro(key, spellId, macroSpellName, unit, iconId)
     end
     table.insert(actionList, {id, "macro", macroText, iconId or GetSpellTexture(spellId)})
 end
+
 for _, unit in ipairs(units) do
     addUnitMacro(SKey.SWIFT_CH, S.CH, spellNames.CH, unit, GetSpellTexture(S.NS)) -- 用迅捷图标
     addUnitMacro(SKey.CH, S.CH, spellNames.CH, unit)
     addUnitMacro(SKey.RIPTIDE, S.RIPTIDE, spellNames.RIPTIDE, unit)
     addUnitMacro(SKey.ES, S.ES, spellNames.ES, unit)
 end
+
 actionIds.NOOP = initializedId + 200000
 table.insert(actionList, {actionIds.NOOP, "macro", "/stopmacro", GetSpellTexture(51566)})
+
 local function hasBuff(unit, spellId, fallbackName, isFromPlayer)
     local expectedName = GetSpellInfo(spellId) or fallbackName
     if not expectedName or expectedName == "" then
@@ -187,6 +205,7 @@ local function hasBuff(unit, spellId, fallbackName, isFromPlayer)
     end
     return WA_GetUnitBuff(unit, expectedName) ~= nil
 end
+
 local function hasDebuff(unit, spellId, fallbackName, isFromPlayer)
     local expectedName = GetSpellInfo(spellId) or fallbackName
     if not expectedName or expectedName == "" then
@@ -197,6 +216,7 @@ local function hasDebuff(unit, spellId, fallbackName, isFromPlayer)
     end
     return WA_GetUnitDebuff(unit, expectedName) ~= nil
 end
+
 local function spellReady(spellId)
     local start, duration, enabled = GetSpellCooldown(spellId)
     if enabled == 0 then
@@ -210,9 +230,11 @@ local function spellReady(spellId)
     end
     return true
 end
+
 local function isMoving()
     return GetUnitSpeed("player") > 0
 end
+
 local function inRange(unit, spellId)
     if unit == "player" then
         if UnitIsDeadOrGhost(unit) then
@@ -238,6 +260,7 @@ local function inRange(unit, spellId)
     end
     return true
 end
+
 local function unitHasTOCDebuff(unit)
     if not C.supportSpecialDebuff then
         return false
@@ -253,6 +276,7 @@ local function unitHasTOCDebuff(unit)
     end
     return false
 end
+
 -- 计算考虑了治疗预读的真实血量缺口
 local function calcUnitHealthDiff(unit, unitHealthMax)
     if not UnitExists(unit) then
@@ -277,12 +301,14 @@ local function calcUnitHealthDiff(unit, unitHealthMax)
     end
     return unitHealthDiff
 end
+
 local function action(key, unit)
     if unit then
         return actionIds[key] and actionIds[key][unit]
     end
     return actionIds[key]
 end
+
 local function runRaid(isParty)
     local maxRaidHealthPlayerUnit = ""
     local maxRaidHealthPlayerHealth = 0
@@ -376,6 +402,7 @@ local function runRaid(isParty)
             lowestCHHpPercent = hpPercent
             lowestCHUnit = unit
         end
+
         if hasBuff(unit, S.ES, "大地之盾", true) then
             playerESActive = true
         end
@@ -384,9 +411,11 @@ local function runRaid(isParty)
         if UnitIsUnit(unit, "focus") then
             inRangeFocusUnit = unit
         end
+
         if isTank and potentialESTank == "" then
             potentialESTank = unit
         end
+
     end
     -- 3. 执行优先树 (严格还原老代码 NowSpellLevel 从 20 到 14 的排列顺序)
     -- Level 20: 迅捷治疗链应急
@@ -439,6 +468,7 @@ local function runRaid(isParty)
     
     return action(spellKey, unitToCast)
 end
+
 local function callbackHealer()
     if select(2, UnitClass("player")) ~= "SHAMAN" then
         return action("NOOP")
@@ -451,6 +481,7 @@ local function callbackHealer()
     end
     return runRaid(isParty)
 end
+
 --粗糙的性能优化，可能会导致非GCD技能延后
 local lastActionID = 0
 local lastTime = 0
@@ -464,6 +495,7 @@ local function APLCallback()
     end
     return lastActionID
 end
+
 aura_env.APLActionList = actionList
 aura_env.APLCallback = APLCallback
 aura_env.APLName = "竹井&斧王奶萨"

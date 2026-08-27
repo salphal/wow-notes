@@ -12,7 +12,9 @@ regionType: empty
 ]]
 if(WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC) then return end
 if APL_ASSASSINATION_ROGUE_CATGIRL then return end; APL_ASSASSINATION_ROGUE_CATGIRL = true
+
 local WAParam = aura_env
+
 -- 禁止名单，后续如果有BOSS不能消失，则把BOSS名字写进来
 local vanishColdBloodBlacklist = {
     ["费尔根"] = true,
@@ -30,6 +32,7 @@ local vanishColdBloodBlacklist = {
     ["冰吼"] = true,
     --["哈卡"] = true,
 }
+
 -- 流血DEBUFF列表（用于血之饥渴检测，深毁伤专属）
 local bleedingDebuffs = {
     48574,  -- 斜掠
@@ -40,6 +43,7 @@ local bleedingDebuffs = {
     48676,  -- 老锁喉
     1284409,-- 新锁喉
 }
+
 local ActionList = {
     {57934, "macro", "/cast [@focus,help,exists][@targettarget,help] 嫁祸诀窍", GetSpellTexture("嫁祸诀窍")},
     {1784, "spell", "潜行"},
@@ -61,9 +65,11 @@ local ActionList = {
     {48666, "spell", "毁伤"},
     {6603, "macro", "/startattack"}
 }
+
 local function APLCallback_RogueAssassinationRotation()
     local CastWindow = (tonumber(GetCVar("SpellQueueWindow")) or 400)/1000
     local NextSpellID = 6603
+
     for i = 1, 1 do
         local isDeepAssa = IsPlayerSpell(51662) or false
         local isBladeFlurry = IsPlayerSpell(13877) or false
@@ -73,6 +79,7 @@ local function APLCallback_RogueAssassinationRotation()
         local inMeleeRange = (IsSpellInRange(GetSpellInfo(48666), "target") == 1)
         local inCombat = UnitAffectingCombat("player")
         local inBossFight = ((IsEncounterInProgress() or IsResting()) and UnitLevel("target") == -1)
+
         -- 技能冷却
         local StealthCD = VF_getSpellCD(1784)
         local SliceAndDiceCD = math.max(0, VF_getSpellCD(6774)-GCD)
@@ -89,6 +96,7 @@ local function APLCallback_RogueAssassinationRotation()
         local HungerForBloodCD = math.max(0, VF_getSpellCD(51662)-GCD)
         local RuptureCD = math.max(0, VF_getSpellCD(48672)-GCD)
         local GarroteCD = math.max(0, VF_getSpellCD(48676)-GCD)
+
         -- BUFF持续时间
         local StealthDuration = VF_getBuff("player", 1784, "HELPFUL|PLAYER")
         local SliceAndDiceDuration = math.max(0, VF_getBuff("player", 6774, "HELPFUL|PLAYER")-GCD)
@@ -98,19 +106,23 @@ local function APLCallback_RogueAssassinationRotation()
         local BladeFlurryDuration = math.max(0, VF_getBuff("player", 13877, "HELPFUL|PLAYER")-GCD)
         local HungerForBloodDuration = math.max(0, VF_getBuff("player", 63848, "HELPFUL|PLAYER")-GCD)
         local _, RedirectCount = VF_getBuff("player", 1282539, "HELPFUL|PLAYER")
+
         -- 目标DEBUFF
         local DeadlyPoisonDuration = math.max(0, VF_getDebuff("target", 57970, "HARMFUL|PLAYER")-GCD)
+
         -- 检测目标是否在禁止消失名单
         local isBlacklistedTarget = false
         local targetName = UnitName("target")
         if targetName and vanishColdBloodBlacklist[targetName] then
             isBlacklistedTarget = true
         end
+
         -- 潜行
         if (not inCombat) and (StealthDuration <= 0) and (StealthCD <= CastWindow) then
             NextSpellID = 1784
             break
         end
+
         -- ==========================================
         -- 0. 自动打断 (额外优先级)
         -- ==========================================
@@ -124,6 +136,7 @@ local function APLCallback_RogueAssassinationRotation()
                 break
             end
         end
+
         -- ==========================================
         -- 0. 转嫁 (额外优先级)
         -- ==========================================
@@ -131,6 +144,7 @@ local function APLCallback_RogueAssassinationRotation()
             NextSpellID = 1282540
             break
         end
+
         -- ==========================================
         -- 0. 自动破甲 (最高优先级)
         -- ==========================================
@@ -185,6 +199,7 @@ local function APLCallback_RogueAssassinationRotation()
                 break
             end
         end
+
         if isBladeFlurry then
             -- ==========================================
             -- 剑刃乱舞流分支
@@ -199,16 +214,19 @@ local function APLCallback_RogueAssassinationRotation()
                     end
                 end
                 if meleeEnemyCount == 0 then meleeEnemyCount = 1 end
+
                 -- 1. 切割补1星（如果buff没了）
                 if (SliceAndDiceDuration <= 1) and (CP >= 1) and (SliceAndDiceCD <= CastWindow) and (Energy > 25) then
                     NextSpellID = 6774
                     break
                 end
+
                 -- 2. 消失 - 如果没有灭绝buff且消失可用
                 if (ExtinctionDuration == 0) and (VanishCD <= CastWindow) and (not isBlacklistedTarget) and inBossFight then
                     NextSpellID = 26889
                     break
                 end
+
                 -- 4.5. 冷血+毒伤连招
                 if (ColdBloodCD <= CastWindow) and (CP >= 4) and (StealthDuration == 0) and inBossFight then
                     NextSpellID = 14177
@@ -218,6 +236,7 @@ local function APLCallback_RogueAssassinationRotation()
                     NextSpellID = 57993
                     break
                 end
+
                 -- 6. 毒伤/毁伤 — 单目标与多目标策略不同
                 if (meleeEnemyCount >= 2) then
                     -- 多目标：毒伤宽松，尽量多打
@@ -291,8 +310,10 @@ local function APLCallback_RogueAssassinationRotation()
                     
                     NextSpellID = 6603
                 end
+
                 return NextSpellID
             end
+
             -- 乱舞就绪 — 阶段一：确保切割>=17s，阶段二：等能量>=90开乱舞
             if (BladeFlurryCD <= CastWindow) and (inMeleeRange) and inBossFight then
                 if (SliceAndDiceDuration < 17) then
@@ -351,6 +372,7 @@ local function APLCallback_RogueAssassinationRotation()
                 break
             end
         end
+
         -- ==========================================
         -- 毁伤通用逻辑
         -- ==========================================
@@ -363,26 +385,31 @@ local function APLCallback_RogueAssassinationRotation()
             NextSpellID = 57934
             break
         end
+
         -- 2. 切割
         if (Energy > 25) and (SliceAndDiceDuration <= 1) and (CP >= 1) and (SliceAndDiceCD <= CastWindow) then
             NextSpellID = 6774
             break
         end
+
         -- 3. 消失
         if (WAParam.config.autoVanish) and (inCombat) and (ExtinctionDuration == 0) and (VanishCD <= CastWindow) and
         (inBossFight) and (not isBlacklistedTarget) and (Energy > 60) and (TrickOfTheTradeCD < 8) then
             NextSpellID = 26889
             break
         end
+
         -- 4. 冷血
         if (inCombat) and (ColdBloodCD <= CastWindow) and (SliceAndDiceDuration > 0) and (StealthDuration == 0) and
         (CP >= 4) and (inBossFight) then
             NextSpellID = 14177
             break
         end
+
         -- 5. 毒伤
         if (inCombat) and (DeadlyPoisonDuration > 0) and (inMeleeRange) and (EnvenomCD <= CastWindow) then
             local canCastEnvenom = false
+
             if CP <= 2 then
                 canCastEnvenom = false
             elseif CP == 3 then
@@ -408,14 +435,17 @@ local function APLCallback_RogueAssassinationRotation()
                     canCastEnvenom = true
                 end
             end
+
             if canCastEnvenom then
                 NextSpellID = 57993
                 break
             end
         end
+
         -- 6. 毁伤
         if (inMeleeRange) and (Energy > 55) and (MutilateCD <= CastWindow) then
             local canCastMutilate = false
+
             if DeadlyPoisonDuration == 0 then
                 canCastMutilate = true
             else
@@ -425,11 +455,13 @@ local function APLCallback_RogueAssassinationRotation()
                     canCastMutilate = true
                 end
             end
+
             if canCastMutilate then
                 NextSpellID = 48666
                 break
             end
         end
+
         -- 7. 自动攻击/收尾
         if (CP <= 2) and (Energy > 55) and (MutilateCD <= CastWindow) and (inMeleeRange) then
             NextSpellID = 48666
@@ -439,8 +471,11 @@ local function APLCallback_RogueAssassinationRotation()
             NextSpellID = 6603
         end
     end
+
     return NextSpellID
 end
+
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_RogueAssassinationRotation
 aura_env.APLName = "凌小猫粮"

@@ -12,7 +12,9 @@ regionType: empty
 ]]--
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_SHAMAN_ENHANCEMENT_WLK then return end APL_SHAMAN_ENHANCEMENT_WLK = true
+
 local C = aura_env.config or {}
+
 local function b(v)
     if v == true then return true end
     if v == false then return false end
@@ -23,6 +25,7 @@ local function b(v)
     end
     return false
 end
+
 local function n(v, default)
     if type(v) == "number" then return v end
     if type(v) == "string" then
@@ -31,6 +34,7 @@ local function n(v, default)
     end
     return default or 0
 end
+
 local Config = {
     UseFeralSpirit           = b(C.useFeralSpirit),
     UseFireElemental         = b(C.useFireElemental),
@@ -40,6 +44,7 @@ local Config = {
     Windfury_PreCombat       = b(C.preCombatWF),
     SmartAOE                 = b(C.smartAOE),
 }
+
 local SPELL = {
     LavaLash           = 1272856,
     LavaLash2          = 60103,
@@ -62,6 +67,7 @@ local SPELL = {
     --ManaSpringTotem      = select(7, GetSpellInfo("法力之泉图腾")) or 58774,
     --WindfuryTotem        = select(7, GetSpellInfo("风怒图腾")) or 8512,
 }
+
 local AURA = {
     MaelstromWeapon = 1283511,
     LightningShield = 49281,
@@ -70,6 +76,7 @@ local AURA = {
     --WindfuryTotem2 = 8515,
     --WindfuryTotem3 = 65990
 }
+
 local ActionList = {
     {SPELL.LavaLash,        "spell", "熔岩猛击"},
     {SPELL.Stormstrike,     "spell", "风暴打击"},
@@ -93,6 +100,7 @@ local ActionList = {
     {6603, "macro", "/startattack\\n/petattack [combat]"},
     {-112, "macro", "/use 10\\n/use 通用热力工程炸药\\n/use [@player] 萨隆邪铁炸弹", 133035}
 }
+
 -- 图腾状态追踪
 local TotemState = {
     magmaGUID = nil,
@@ -103,10 +111,12 @@ local TotemState = {
     lastTickTarget = 0,
     lastTotemStart = 0,
 }
+
 local petAttackPending = false
 local petAttackStep = 0
 local lastPetAttackTime = 0
 local lastTargetGUID = ""
+
 -- 辅助函数
 local function getEnemyCount()
     local count = 0
@@ -125,6 +135,7 @@ local function getEnemyCount()
     end
     return count
 end
+
 local function shouldKick()
     if not UnitExists("target") or UnitIsDead("target") then return false end
     local castName, _, _, _, _, _, _, notInterruptible = UnitCastingInfo("target")
@@ -133,11 +144,13 @@ local function shouldKick()
     end
     return castName and (not notInterruptible or notInterruptible == false)
 end
+
 local function GetFireTotemInfo()
     if not GetTotemInfo then return false, "" end
     local haveTotem, totemName = GetTotemInfo(1)
     return haveTotem and totemName and totemName ~= "", totemName or ""
 end
+
 local function HasAllTotems()
     if not GetTotemInfo then return false end
     for slot = 1, 4 do
@@ -148,6 +161,7 @@ local function HasAllTotems()
     end
     return true
 end
+
 -- 熔岩图腾需求判断
 local function GetTotemNeeds()
     local fireTotemExists, fireTotemName = GetFireTotemInfo()
@@ -236,6 +250,7 @@ local function GetTotemNeeds()
     
     return true, false, needMagma
 end
+
 -- 火焰新星命中判断
 local function canFireNova()
     local fireTotemExists, fireTotemName = GetFireTotemInfo()
@@ -268,8 +283,11 @@ local function canFireNova()
         or (getEnemyCount() >= 2) then
         return true
     end
+
     return false
 end
+
+
 -- APL主循环
 local function APLCallback_EnhancementRotation()
     local NextSpellID = 6603
@@ -357,21 +375,27 @@ local function APLCallback_EnhancementRotation()
         end
         return 6603
     end
+
     if not UnitExists("target") or not UnitCanAttack("player", "target") or UnitIsDead("target") then
         return 6603
     end
+
     if Config.UseAutoKick and shouldKick() and kickCD <= CastWindow then
         return SPELL.WindShear
     end
+
     if Config.UseFeralSpirit and inBossFight and inMeleeRange and feralCD <= CastWindow then
         return SPELL.FeralSpirit
     end
+
     if inBossFight and inMeleeRange and VF_getItemCD(10) <= CastWindow then
         return -112
     end
+
     if manaPercent < Config.ShamanisticRageThreshold and srCD <= CastWindow then
         return SPELL.ShamanisticRage
     end
+
     -- AOE循环（2+目标）
     if isAOE then
         if not isMoving and mtCD <= CastWindow and needMagmaTotem then
@@ -381,6 +405,7 @@ local function APLCallback_EnhancementRotation()
         if flameShockRem <= 0 and fsCD <= CastWindow then
             return SPELL.FlameShock
         end
+
         if enemyCount >= 3 then
             if canFireNova() and fnCD <= CastWindow then
                 return SPELL.FireNova
@@ -431,6 +456,7 @@ local function APLCallback_EnhancementRotation()
         if maelstromStacks == 5 and flameShockRem > 0 and lbCD <= CastWindow then
             return SPELL.LavaBurst
         end
+
         if maelstromStacks == 5 and ltCD <= CastWindow then
             return SPELL.LightningBolt
         end
@@ -443,12 +469,15 @@ local function APLCallback_EnhancementRotation()
             return SPELL.FireNova
         end
     end
+
     if Config.UseFireElemental and inBossFight and not isMoving and feCD <= CastWindow then
         return SPELL.FireElemental
     end
+
     if flameShockRem > 3 and esCD <= CastWindow then
         return SPELL.EarthShock
     end
+
     if not inMeleeRange and maelstromStacks >= 4 and flameShockRem > 0 and lbCD <= CastWindow then
         return SPELL.LavaBurst
     end
@@ -456,9 +485,11 @@ local function APLCallback_EnhancementRotation()
     if not inMeleeRange and maelstromStacks >= 4 and ltCD <= CastWindow then
         return SPELL.LightningBolt
     end
+
     if Config.LightningShield_Combat and lightningShieldRem <= 0 and lshCD <= CastWindow then
         return SPELL.LightningShield
     end
+
     -- 最低优先级：补缺失风怒图腾
     --[[local hasAirBuff = ((VF_getBuff("player", AURA.ImprovedIcyTalons, "HELPFUL") > 0) 
                         or (VF_getBuff("player", AURA.WindfuryTotem, "HELPFUL") > 0)
@@ -467,8 +498,10 @@ local function APLCallback_EnhancementRotation()
     if not isMoving and not hasAirBuff then
         return SPELL.WindfuryTotem
     end]]
+
     return NextSpellID
 end
+
 -- 战斗日志事件处理
 local function onCLEUEvent()
     local _, subEvent, _, srcGUID, srcName, srcFlags, _, destGUID, destName, destFlags, _, spellId, spellName = CombatLogGetCurrentEventInfo()
@@ -521,6 +554,7 @@ local function onCLEUEvent()
         petAttackPending = true
     end
 end
+
 local Manager = CreateFrame("Frame", "EnhancementAPLManager", UIParent)
 Manager:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Manager:SetScript("OnEvent", function(_, event)
@@ -528,6 +562,7 @@ Manager:SetScript("OnEvent", function(_, event)
             onCLEUEvent()
         end
 end)
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_EnhancementRotation
 aura_env.APLName = "夜雨双手增强"

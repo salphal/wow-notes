@@ -27,6 +27,7 @@ local HekiliWait = 0
 local ActionList = {}
 local CursorAOESpells = {}
 local LagTimestmap = 0
+
 ---遍历技能书中的主动技能
 if(WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC) then
     local tmp = 1
@@ -102,6 +103,7 @@ else
 end
 ---保底0处理
 table.insert(ActionList, {0, "macro", "/stopmacro", GetSpellTexture(6603)})
+
 local hasMelee = false
 for i, action in ipairs(ActionList) do
     if(action[1] == 6603) then---修改6603攻击技能变成startattack宏
@@ -126,6 +128,7 @@ end
 if not hasMelee then
     table.insert(ActionList, {6603, "macro", "/startattack"})
 end
+
 function aura_env.VF_onHekiliEvent()
     if((HekiliDisplayPrimary~= nil) and 
         (HekiliDisplayPrimary.Recommendations ~= nil) and 
@@ -138,6 +141,7 @@ function aura_env.VF_onHekiliEvent()
         LagTimestmap = GetTime()
     end
 end
+
 local function APLCallback_HekiliFollower()
     local NextActionID = 6603
     local CastWindow = (tonumber(GetCVar("SpellQueueWindow")) or 400)/1000
@@ -166,6 +170,7 @@ local function APLCallback_HekiliFollower()
     end
     return NextActionID
 end
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_HekiliFollower
 aura_env.APLName = "Hekili"

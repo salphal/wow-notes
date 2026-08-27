@@ -11,9 +11,12 @@ regionType: empty
   原作者：疯狂不龟路
   深度重构：念秋
 ]]
+
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_UHSSDK_WLK then return end APL_UHSSDK_WLK = true
+
 local WAParam = aura_env
+
 -- ======================== 技能常量 ========================
 local S = {
     IC = --[[select(7, GetSpellInfo("冰冷触摸")) or ]]49909,
@@ -40,6 +43,7 @@ local S = {
     GLOVES = -112,
     IC_DEBUFF = 55095
 }
+
 -- 同符文组核心技能互替（提示A时手动放组内任意技能都视为已完成，跳到下一步）
 -- 鲜血符文组：红脸/血打/血沸/传染/绞袭，都消耗鲜血符文，组内互替等价
 local _flexBlood = { [S.BP] = true, [S.BS] = true, [S.BB] = true, [S.PE] = true, [S.STR] = true }
@@ -47,6 +51,7 @@ local _flexBlood = { [S.BP] = true, [S.BS] = true, [S.BB] = true, [S.PE] = true,
 local _flexUnholy = { [S.UP] = true, [S.PS] = true, [S.GF] = true, [S.BSH] = true }
 -- 冰霜符文组：冰触/冰链，都消耗冰符文，组内互替等价
 local _flexFrost = { [S.IC] = true, [S.CI] = true }
+
 -- ======================== 状态变量（全 file-scope local） ========================
 local phase = "idle"
 local oStep, nRound, nSub
@@ -55,12 +60,15 @@ local _isFilling
 local _lastSID, _lastST
 local _expectedID, _expectedName
 local _hasImprovedUP
+
 local function IsCD(spellID)
     return (math.max(0, VF_getSpellCD(spellID)-VF_getSpellCD(61304)) >= 1)
 end
+
 local function GetRP()
     return UnitPower("player", 6) or 0
 end
+
 local function PestInfo()
     local count, seen = 0, {}
     for i = 1, 40 do
@@ -76,13 +84,16 @@ local function PestInfo()
     end
     return math.max(0, count - 1)
 end
+
 local function IsGlovesReady()
     return _isBoss and WAParam.config.useGlovesAuto and (VF_getItemCD(10) == 0) and WeakAuras.CheckRange("target", 5, "<=")
 end
+
 -- ======================== 循环表 ========================
 local function mks(s, i, r)
     return { spell = s, id = i, r = r }
 end
+
 local OP_BOSS = {
     mks("冰冷触摸", S.IC, "起1"),
     mks("暗影打击", S.PS, "起2"),
@@ -243,6 +254,7 @@ local NA4 = {
 }
 local N_ROUNDS = { N1, N2, N3, N4 }
 local NA_ROUNDS = { NA1, NA2, NA3, NA4 }
+
 -- ======================== 事件 ========================
 local function EnterCombat()
     phase = "opener"
@@ -268,11 +280,13 @@ local function EnterCombat()
         _startRound = 2
     end
 end
+
 local function LeaveCombat()
     phase = "idle"
     _lastSID, _lastST = nil, 0
     _expectedID, _expectedName = nil,nil
 end
+
 local function OnCastSuccess(spellName, spellID)
     if phase == "idle" then
         return
@@ -304,6 +318,7 @@ local function OnCastSuccess(spellName, spellID)
         nSub = nSub + 1
     end
 end
+
 local function OnCLEU()
     local _, sub, _, srcG, _, _, _, dstG, _, _, _, sID, sName, _, miss = CombatLogGetCurrentEventInfo()
     if sub == "SPELL_CAST_SUCCESS" and srcG == UnitGUID("player") then
@@ -330,6 +345,7 @@ local function OnCLEU()
         end
     end
 end
+
 local Manager = CreateFrame("Frame", "UnholyDKAPLManager", UIParent)
 Manager:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Manager:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -343,6 +359,7 @@ Manager:SetScript("OnEvent", function(_, ev)
         LeaveCombat()
     end
 end)
+
 -- ======================== 核心函数 ========================
 local function GetFiller()
     if WAParam.config.useDeathCoil and GetRP() >= 55 and not IsCD(S.DC) then
@@ -356,6 +373,7 @@ local function GetFiller()
     end
     return { spell = "等待", id = nil, r = "空窗-等待" }
 end
+
 local function GetNormal()
     while true do
         if nSub == 1 then
@@ -368,6 +386,7 @@ local function GetNormal()
             local pestTargets = WAParam.config.pestilenceTargets or 1
             _roundAOE = WAParam.config.usePestilence and pestCount >= pestTargets
         end
+
         local rounds = _roundAOE and NA_ROUNDS or N_ROUNDS
         local round = rounds[nRound]
         local step = round and round[nSub]
@@ -407,6 +426,7 @@ local function GetNormal()
         end
     end
 end
+
 local function GetOpener()
     while true do
         if oStep == 1 and (UnitExists("target") and (VF_getDebuff("target", S.IC_DEBUFF, "HARMFUL|PLAYER") > 0)) then
@@ -455,6 +475,7 @@ local function GetOpener()
                 _armyReplace = 1
             end
         end
+
         local step = _openerTable[oStep]
         if not step then
             phase = "normal"
@@ -515,6 +536,7 @@ local function APLCallback()
     end
     return 6603
 end
+
 local ActionList = { { 6603, "macro", "/startattack\\n/cast [nopet] 亡者复生\\n/petattack [combat]" } }
 for _, id in ipairs({ S.IC, S.PS, S.BS, S.SS, S.BB, S.DN, S.DC, S.HN, S.GA, S.EW, S.AR, S.BSH, S.BT, S.GF, S.PE, S.BP, S.UP }) do
     local n = GetSpellInfo(id)
@@ -538,9 +560,12 @@ for _, id in ipairs({ S.IC, S.PS, S.BS, S.SS, S.BB, S.DN, S.DC, S.HN, S.GA, S.EW
 end
 table.insert(ActionList, { S.RD, "spell", "亡者复生" })
 table.insert(ActionList, { S.GLOVES, "macro", "/use 10\\n/use 通用热力工程炸药\\n/use [@player] 萨隆邪铁炸弹", 133035 })
+
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback
 aura_env.APLName = "疯狂念秋"
+
 
 -- ===== actions.init 加载时自定义代码 =====
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end

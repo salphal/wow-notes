@@ -13,6 +13,8 @@ regionType: empty
 ]]
 if(WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC) then return end
 if APL_BeastMasteryHunter_TITAN then return end; APL_BeastMasteryHunter_TITAN = true
+
+
 local function splitStr(str, sep)
     local result = {}
     for part in string.gmatch(str, "[^" .. sep .. "]+") do
@@ -20,6 +22,7 @@ local function splitStr(str, sep)
     end
     return result
 end
+
 local function IsTargetAnubarak()
     if not UnitExists("target") then
         return false
@@ -46,6 +49,7 @@ local function IsTargetAnubarak()
     
     return false
 end
+
 local function getSpellCDHubert(spellId)
     local start, duration, enabled = GetSpellCooldown(spellId)
     if spellId == 61305 then
@@ -63,6 +67,7 @@ local function getSpellCDHubert(spellId)
         return 999
     end
 end
+
 local function getItemCDHubert(itemId)
     local start, duration, useable
     if(itemId <= 30) then
@@ -79,6 +84,7 @@ local function getItemCDHubert(itemId)
         return 999
     end
 end
+
 local function getEquipSlotCD(slotNum)
     if not slotNum or type(slotNum) ~= "number" or slotNum < 0 or slotNum > 19 then
         return 999
@@ -114,6 +120,7 @@ local function getEquipSlotCD(slotNum)
         return 0
     end
 end
+
 local function getBagItemCD(itemId)
     if not itemId or type(itemId) ~= "number" then
         return 999
@@ -146,10 +153,12 @@ local function getBagItemCD(itemId)
         return 999 
     end
 end
+
 local function getItemCountInBag(itemId)
     local count = GetItemCount(itemId, false, false)
     return count or 0
 end
+
 local function getMyBuff(buffId)
     local buffName, icon, count, debuffType, duration, expirationTime, source, isStealable, nameplateShowPersonal, spellId = WA_GetUnitBuff("player", buffId, "HARMFUL")
     if (buffName ~= nil) then
@@ -161,6 +170,7 @@ local function getMyBuff(buffId)
     end
     return 0
 end
+
 local function getTargetDebuff(buffId)
     local buffName, icon, count, debuffType, duration, expirationTime, source, isStealable, nameplateShowPersonal, spellId = WA_GetUnitDebuff("target", buffId, "HARMFUL")
     if (buffName ~= nil) then
@@ -172,6 +182,7 @@ local function getTargetDebuff(buffId)
     end
     return 0
 end
+
 local function getMyDebuff(buffId)
     local buffName, icon, count, debuffType, duration, expirationTime, source, isStealable, nameplateShowPersonal, spellId = WA_GetUnitDebuff("player", buffId, "HARMFUL|PLAYER")
     if (buffName ~= nil) then
@@ -183,6 +194,7 @@ local function getMyDebuff(buffId)
     end
     return 0
 end
+
 local function getFocusDebuffByPlayer(buffId)
     local buffName, icon, count, debuffType, duration, expirationTime, source, isStealable, nameplateShowPersonal, spellId = WA_GetUnitDebuff("focus", buffId, "HARMFUL|PLAYER")
     if (buffName ~= nil) then
@@ -194,6 +206,7 @@ local function getFocusDebuffByPlayer(buffId)
     end
     return 0
 end
+
 local function getMySourceDebuff(buffId)
     local buffName, icon, count, debuffType, duration, expirationTime, source, isStealable, nameplateShowPersonal, spellId = WA_GetUnitDebuff("target", buffId, "HARMFUL|PLAYER")
     if (buffName ~= nil) then
@@ -207,6 +220,7 @@ local function getMySourceDebuff(buffId)
     end
     return 0
 end
+
 local function getPetBuff(buffId)
     local buffName, icon, count, debuffType, duration, expirationTime, source, isStealable, nameplateShowPersonal, spellId = WA_GetUnitBuff("pet", buffId, "HELPFUL")
     if (buffName ~= nil) then
@@ -218,6 +232,7 @@ local function getPetBuff(buffId)
     end
     return 0
 end
+
 local function getHPPercent(unit)
     local currentHP = UnitHealth(unit)
     local maxHP = UnitHealthMax(unit)
@@ -228,11 +243,15 @@ local function getHPPercent(unit)
     hpPercent = math.floor(hpPercent * 10) / 10 
     return math.max(0, math.min(100, hpPercent))
 end
+
+
 local function getManaPercent()
     local mana = UnitPower("player", 0)
     local maxMana = UnitPowerMax("player", 0)
     return maxMana > 0 and (mana / maxMana) * 100 or 100
 end
+
+
 local function getBuffStacks(buffId)
     local buffName, icon, count, debuffType, duration, expirationTime, source, isStealable, nameplateShowPersonal, spellId = WA_GetUnitBuff("player", buffId, "HARMFUL|PLAYER")
     if (buffName ~= nil) then
@@ -240,6 +259,7 @@ local function getBuffStacks(buffId)
     end
     return 0
 end
+
 local function getBuffRankByPlayer(unit, buffname)
     if (WA_GetUnitBuff) then
         local name, _, rank, _, _, _, source = WA_GetUnitBuff(unit, buffname)
@@ -249,6 +269,7 @@ local function getBuffRankByPlayer(unit, buffname)
     end
     return 0
 end
+
 local function getDeBuffRankByPlayer(unit, buffname)
     if (WA_GetUnitDebuff) then
         local name, _, rank, _, _, _, source = WA_GetUnitDebuff(unit, buffname)
@@ -258,6 +279,7 @@ local function getDeBuffRankByPlayer(unit, buffname)
     end
     return 0
 end
+
 local function getAOECount(range)
     local count = 0
     for i = 1, 40 do
@@ -271,6 +293,7 @@ local function getAOECount(range)
     end
     return count
 end
+
 local function getFoundTT(TTName)
     local found = false 
     for i = 1, 4 do 
@@ -282,6 +305,8 @@ local function getFoundTT(TTName)
     end 
     return found and 1 or 0
 end
+
+
 -- 目标NPC_ID列表
 local TARGET_NPC_IDS = {
     -- 测试
@@ -361,6 +386,9 @@ local TARGET_NPC_IDS = {
     14986, --妖术师金度.金度之影
     11357, --哈卡.哈卡之子
 }
+
+
+
 local function checkUnit(unit)
     if not UnitExists(unit) then
         return false
@@ -385,6 +413,7 @@ local function checkUnit(unit)
     end
     return false
 end
+
 local function isTargetBossOrInNpcList()
     if checkUnit("target") then
         return true
@@ -394,6 +423,7 @@ local function isTargetBossOrInNpcList()
     end
     return false
 end
+
 local function isBoss()
     if UnitLevel("target") == -1 then
         return true
@@ -401,6 +431,7 @@ local function isBoss()
         return false
     end
 end
+
 local function getAOECountBoss(range)
     local count = 0
     for i = 1, 40 do
@@ -430,6 +461,7 @@ local function getAOECountBoss(range)
     end
     return count
 end
+
 local function isFocusInRangeById(spellId)
     local spellName = GetSpellInfo(spellId)
     if spellName then
@@ -437,6 +469,7 @@ local function isFocusInRangeById(spellId)
     end
     return false
 end
+
 local function getCastingTime()
     local _, _, _, ctime1, ctime2, _, _, _, spellID = CastingInfo()
     if (ctime1 == nil) then
@@ -448,6 +481,7 @@ local function getCastingTime()
         return (ctime2 - GetTime() * 1000) / 100
     end
 end
+
 local function isCastingSpell()
     local _, _, _, ctime1, ctime2, _, _, _, spellID = CastingInfo()
     if not ctime1 then
@@ -455,9 +489,11 @@ local function isCastingSpell()
     end
     return spellID
 end
+
 local function findActionIndexByName(actionName)
     return nil
 end
+
 local function getWeaponEnchantInfoMain()
     local mainHandItem = GetInventoryItemID("player", 16) 
     if not mainHandItem then
@@ -470,6 +506,7 @@ local function getWeaponEnchantInfoMain()
         return 0
     end
 end
+
 local function getWeaponEnchantInfoOff()
     local offHandItem = GetInventoryItemID("player", 17)
     if not offHandItem then
@@ -482,6 +519,7 @@ local function getWeaponEnchantInfoOff()
         return 0
     end
 end
+
 local function hasPet()
     local hasUI, isHunterPet = HasPetUI();
     if hasUI and isHunterPet then
@@ -492,6 +530,7 @@ local function hasPet()
         return 0
     end
 end
+
 local function getRuneCount(targetType)
     local runeCount = 0
     for i = 1, 6 do 
@@ -504,6 +543,7 @@ local function getRuneCount(targetType)
     end
     return runeCount
 end
+
 local function getWeaponType(itemLink)
     if not itemLink then
         return "空"
@@ -511,10 +551,13 @@ local function getWeaponType(itemLink)
     local _, _, _, _, _, itemType, itemSubType = GetItemInfo(itemLink)
     return itemSubType or "未知类型"
 end
+
+
 local SilenceDebuffIDs = {
     -- [71041] = "地下城逃亡者", 
     [34190] = "奥术宝珠", 
 }
+
 local function hasSilenceDebuff()
     for i = 1, 40 do
         local debuffId = select(10, UnitDebuff("player", i))
@@ -527,6 +570,7 @@ local function hasSilenceDebuff()
     end
     return false
 end
+
 local function findActionIndexByID(actionID)
     if (type(actionID) == "number") then
         for index, action in ipairs(ActionList) do
@@ -540,6 +584,7 @@ local function findActionIndexByID(actionID)
     end
     return findActionIndexByName(actionID)
 end
+
 local G_SwingMonitor = nil
 if not G_SwingMonitor then
     G_SwingMonitor = {
@@ -551,6 +596,7 @@ if not G_SwingMonitor then
         swingFrame = nil
     }
 end
+
 local function initSwingMonitor()
     if G_SwingMonitor.swingInited then return end
     
@@ -610,7 +656,9 @@ local function initSwingMonitor()
     
     G_SwingMonitor.swingInited = true
 end
+
 initSwingMonitor()
+
 local function getAutoAttackRemainingTime()
     G_SwingMonitor.baseSpeed = G_SwingMonitor.baseSpeed or UnitAttackSpeed("player") or 0
     G_SwingMonitor.lastSwingTimestamp = G_SwingMonitor.lastSwingTimestamp or GetTime()
@@ -620,8 +668,10 @@ local function getAutoAttackRemainingTime()
     
     return remain, G_SwingMonitor.baseSpeed, isPaused
 end
+
 local WAParam = aura_env
 local isFirstBurstDone = false
+
 local TARGET_BOSS_NAMES = WAParam.config.swl_notUseDuochongsheji
 local function splitNames(str, sep)
     local result = {}
@@ -635,6 +685,7 @@ local function splitNames(str, sep)
     end
     return result
 end
+
 local function checkUnitByName(unit)
     if not UnitExists(unit) then
         return false
@@ -654,6 +705,7 @@ local function checkUnitByName(unit)
     end
     return false
 end
+
 local function isNotDuochongshejiInNameList()
     if checkUnitByName("target") then
         return true
@@ -663,8 +715,10 @@ local function isNotDuochongshejiInNameList()
     end
     return false
 end
+
 lastXYShootTime = 0  -- 上次雄鹰射击时间
 currentXYShootTime = 0 -- 本次雄鹰射击时间
+
 local Config = {
     WowVersion = WOW_PROJECT_WRATH_CLASSIC,
     Spells = {
@@ -725,6 +779,7 @@ local Config = {
         tongyongzhadan = {ID = 42641, Name = "通用热力工程炸药"},
     },
 }
+
 local ActionList = {
     {Config.Spells.wengusheji.ID, "macro", Config.Spells.wengusheji.Name,GetSpellTexture("稳固射击")},
     {Config.Spells.dushedingci.ID, "macro", Config.Spells.dushedingci.Name,GetSpellTexture("毒蛇钉刺")},
@@ -749,6 +804,7 @@ local ActionList = {
     {Config.Spells.longyingshouhu.ID, "spell", Config.Spells.longyingshouhu.Name},
     {Config.Spells.kuisheshouhu.ID, "spell", Config.Spells.kuisheshouhu.Name},
 }
+
 -- 核心输出逻辑
 local function APLCallback_BeastMasteryHunterSimple()
     local NextSpellID = 75
@@ -837,6 +893,7 @@ local function APLCallback_BeastMasteryHunterSimple()
             return NextSpellID
         end
     end
+
     -- 猎人印记
     if IsBossFight then
         if lierenyinjiDebuff <= 0 and lierenyinjiCD <= Config.Thresholds.castWindow and not InCombat then
@@ -960,6 +1017,7 @@ local function APLCallback_BeastMasteryHunterSimple()
         return NextSpellID
     end
 end
+
 local function onCLEUEvent()
     local _, subEvent, _, srcGUID, _, _, _, destGUID, _, _, _, spellID = CombatLogGetCurrentEventInfo()
     
@@ -976,6 +1034,9 @@ local function onCLEUEvent()
         isFirstBurstDone = true
     end
 end
+
+
+
 local Manager = CreateFrame("Frame","WLKBeastMasteryHunterAPLManager", UIParent)
 Manager:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Manager:SetScript("OnEvent", function(self, e, ...)
@@ -983,6 +1044,8 @@ Manager:SetScript("OnEvent", function(self, e, ...)
             onCLEUEvent(e)
         end
 end)
+
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_BeastMasteryHunterSimple
 aura_env.APLName = "虎呗特兽王"

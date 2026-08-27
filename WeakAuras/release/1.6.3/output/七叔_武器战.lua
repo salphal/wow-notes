@@ -10,9 +10,12 @@ regionType: empty
   武器战打地鼠 APL - 泰坦重铸时光服
   作者：Sevenuncle
 ]]
+
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_ARMS_WARRIOR_SELFVF then return end APL_ARMS_WARRIOR_SELFVF = true
+
 local WAParam = aura_env
+
 -- 技能ID
 local S = {
     Rend = --[[select(7, GetSpellInfo("撕裂")) or ]]47465,
@@ -60,6 +63,7 @@ local S_CL = {
     Execute = -200000 - S.Execute,
     Attack = -200000 - S.Attack,
 }
+
 local ActionList = {
     -- 捆绑英勇打击的宏（高怒单体）
     { S_HS.Rend, "macro", "/cast [stance:2/3] !战斗姿态\\n/cast 撕裂\\n/cast !英勇打击", GetSpellTexture("撕裂") },
@@ -95,19 +99,23 @@ local ActionList = {
     { S.Bloodrage, "spell", "血性狂暴" },
     { -112, "macro", "/use 10\\n/use 通用热力工程炸药\\n/use [@player] 萨隆邪铁炸弹", 133035 }
 }
+
 -- 平砍计时
 local SwingTimer = {
     baseSpeed = 0, lastSwing = 0, pauseTotal = 0,
     isPaused = false
 }
+
 local function getSwingRemain()
     SwingTimer.baseSpeed = UnitAttackSpeed("player") or SwingTimer.baseSpeed
     local remain = SwingTimer.baseSpeed - (GetTime() - SwingTimer.lastSwing - SwingTimer.pauseTotal)
     return math.max(0, remain)
 end
+
 local BladestormActive = false
 local BladestormStart = 0
 local intoCleaveMode = false
+
 local function getNearbyCount()
     local count = 0
     local counted = {}
@@ -125,6 +133,7 @@ local function getNearbyCount()
     end
     return count
 end
+
 local function getHPPercent(unit)
     unit = unit or "target"
     if not UnitExists(unit) then return 100 end
@@ -132,8 +141,10 @@ local function getHPPercent(unit)
     if m == 0 then return 100 end
     return (UnitHealth(unit) / m) * 100
 end
+
 SwingTimer.baseSpeed = UnitAttackSpeed("player") or 3.6
 SwingTimer.lastSwing = GetTime()
+
 local Manager = CreateFrame("Frame", "ArmsWarriorAPLManager", UIParent)
 Manager:SetScript("OnUpdate", function(_, elapsed)
         if SwingTimer.isPaused then
@@ -171,6 +182,7 @@ Manager:SetScript("OnEvent", function(_, event, ...)
             SwingTimer.isPaused = false
         end
 end)
+
 local function hasFear()
     local count = C_LossOfControl.GetActiveLossOfControlDataCountByUnit("player")
     for i = 1, count do
@@ -181,6 +193,9 @@ local function hasFear()
     end
     return false
 end
+
+
+
 local function APLCallback_ArmsWarrior()
     local msWindow = 1
     local inCombat = UnitAffectingCombat("player")
@@ -225,6 +240,7 @@ local function APLCallback_ArmsWarrior()
             return S.HeroicThrow
         end
     end
+
     -- 血性狂暴
     if rage < 75 and cd(S.Bloodrage) <= win then
         return S.Bloodrage
@@ -251,6 +267,7 @@ local function APLCallback_ArmsWarrior()
     if (not inCombat) or (not hasTarget) then 
         return S.Attack
     end
+
     -- 利刃风暴持续中
     if BladestormActive then
         if GetTime() - BladestormStart >= 6 then
@@ -258,6 +275,7 @@ local function APLCallback_ArmsWarrior()
         end
         return S.Bladestorm
     end
+
     local hp = getHPPercent("target")
     local TfBDUr = math.max(0, VF_getBuff("player", S.TasteForBlood, "HELPFUL|PLAYER") - gcdRemain)
     local hasTfB = (TfBDUr > 0)
@@ -282,6 +300,7 @@ local function APLCallback_ArmsWarrior()
     else
         intoCleaveMode = false
     end
+
     -- 普通/英勇/顺劈自动选择
     local function autoSelectSpell(id)
         if rage >= 75 --[[ and swingRemain <= 0.3]] then
@@ -293,6 +312,7 @@ local function APLCallback_ArmsWarrior()
         end
         return id
     end
+
     -- 1. 撕裂（无撕裂时优先补）
     if not hasRend and rendCD <= win then
         return autoSelectSpell(S.Rend)
@@ -302,6 +322,7 @@ local function APLCallback_ArmsWarrior()
     if msCD <= win then
         return autoSelectSpell(S.MortalStrike)
     end
+
     -- 3. 压制
     if opCD <= win and hasTfB then
         return autoSelectSpell(S.Overpower)
@@ -312,6 +333,7 @@ local function APLCallback_ArmsWarrior()
         and (hasSD or (hp < 20 and (targetDeadTime <= math.max(gcdRemain+0.5, swingRemain+0.5)))) then
         return autoSelectSpell(S.Execute)
     end
+
     -- 5. AOE
     if intoCleaveMode then
         if rage >= 30 and cd(S.SweepingStrikes) < win then
@@ -337,9 +359,11 @@ local function APLCallback_ArmsWarrior()
             return autoSelectSpell(S.Slam)
         end
     end
+
     -- 8. 都在等致死CD可主动填充一下英勇或者顺劈，怒气不够自然变白刀
     return autoSelectSpell(S.Attack)
 end
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback_ArmsWarrior
 aura_env.APLName = "七叔武器战"

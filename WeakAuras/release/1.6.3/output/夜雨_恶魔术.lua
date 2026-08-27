@@ -13,9 +13,12 @@ regionType: empty
 版本：1.0
 适配时光服的恶术士，支持自由开关及BOSS战自动爆发（恶魔变形+种族技能+饰品+手套+速度药水）；仿猫德的AOE循环模式（手动打 1-2 个种子，命中 3 次后自动进入 AOE 循环）；支持变形自动冲锋/法阵传回（需战前施放法阵）；支持焦点和鼠标指向1级暗影箭偷灭杀与双目标DOT。 
 ]]--
+
 if WOW_PROJECT_ID ~= WOW_PROJECT_WRATH_CLASSIC then return end
 if APL_YEYU_DEMONOLOGY_BRANCH then return end APL_YEYU_DEMONOLOGY_BRANCH = true
+
 local config = aura_env.config or {}
+
 local function getSmartAOECount()
     local count = 0
     local counted = {}
@@ -33,6 +36,7 @@ local function getSmartAOECount()
     end
     return count
 end
+
 -- 禁止冲锋法阵名单
 local ChargeBlacklist = {
     ["奥"] = true,
@@ -47,6 +51,7 @@ local ChargeBlacklist = {
     --["菲米斯"] = true,
     ["科隆加恩"] = true,
 }
+
 -- 智能AOE
 local intoSmartAOE = false
 local SeedHitCount = 0
@@ -74,11 +79,15 @@ local function onCLEUEvent(event)
         end
     end
 end
+
 local Manager = CreateFrame("Frame")
 if config.smartAOE then
     Manager:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     Manager:SetScript("OnEvent", function(self, e, ...) onCLEUEvent(e) end)
 end
+
+
+
 local ActionList = {
     {47809, "macro", "/cast 暗影箭\\n/petattack [combat]", GetSpellTexture("暗影箭")},
     {47838, "macro", "/cast 烧尽\\n/petattack [combat]", GetSpellTexture("烧尽")},
@@ -103,10 +112,12 @@ local ActionList = {
     {30146, "spell", "召唤恶魔卫士"},
     {47893, "spell", "邪甲术"},
 }
+
 -- 状态
 local lastImmCastTime = 0
 local lastSB1CastTime = 0
 local afterCharge = false
+
 local lastreason = ""
 local function recommend(spellId, reason)
     if lastreason ~= reason then
@@ -115,6 +126,7 @@ local function recommend(spellId, reason)
     end
     return spellId
 end
+
 -- APL主逻辑
 local function APLCallback()
     local CastWindow = (tonumber(GetCVar("SpellQueueWindow")) or 400)/1000
@@ -174,6 +186,7 @@ local function APLCallback()
     
     if (now - lastImmCastTime) < 0.3 then ImmDur = 15 FocusImmDur = 15 else lastImmCastTime = 0 end --防止重复献祭
     if (now - lastSB1CastTime) > 3 then DecimationSoon = false lastSB1CastTime = 0 end --防止重复骗灭杀
+
     -- 非战斗
     if not isCombat or not UnitExists("target") or not UnitCanAttack("player", "target") or UnitIsDead("target") then
         if not isCombat and not IsMounted() and (not UnitExists("pet") or UnitIsDead("pet")) then
@@ -190,6 +203,7 @@ local function APLCallback()
         end
         return recommend(47809, "脱战暗影箭")
     end
+
     -- 移动优先技能
     if isMoving then
         if SFflameCD <= CastWindow and isSFRange then
@@ -217,6 +231,7 @@ local function APLCallback()
             return recommend(50589, "献祭光环")
         end
     end
+
     -- 变身结束，法阵归位
     if config.autoMetaUtility and not ChargeBlacklist[UnitName("target")] and DCSummonDur > 0 and MetaBuffDur <= 0 and afterCharge then
         if DCTeleportCD <= CastWindow and isSFRange then
@@ -226,6 +241,7 @@ local function APLCallback()
             afterCharge = false
         end
     end
+
     -- 爆发
     if config.autoBurst and isBoss then
         if MetaCD <= CastWindow and (targetDeadTime > 30 or targetDeadTime == 0 or not targetDeadTime) and not isMoving then
@@ -235,10 +251,12 @@ local function APLCallback()
             return recommend(47193, "恶魔增效")
         end
     end
+
     -- AOE
     if intoSmartAOE and not isMoving then
         return recommend(47836, "AOE种子")
     end
+
     -- 主目标DOT
     if CorrDur <= CastWindow and targetDeadTime > 10 then
         return recommend(47813, "主目标补腐蚀")
@@ -249,6 +267,7 @@ local function APLCallback()
     if isBoss and targetDeadTime > 70 and CoDCD <= CastWindow then
         return recommend(47867, "厄运诅咒")
     end
+
     -- 多目标&偷灭杀
     local targetHPPercent = UnitHealth("target") / (UnitHealthMax("target") > 0 and UnitHealthMax("target") or 1) * 100
     if hasFocus then
@@ -271,15 +290,19 @@ local function APLCallback()
             return recommend(999006, "鼠标指向偷灭杀")
         end
     end
+
     -- 灭杀触发后灵魂火
     if hasDecimation and not isMoving then
         return recommend(47825, "灭杀灵魂火")
     end
+
     if MoltenCoreCount > 0 then
         return recommend(47838, "熔火之心烧尽")
     end
+
     return recommend(47809, "兜底暗影箭")
 end
+
 aura_env.APLActionList = ActionList
 aura_env.APLCallback = APLCallback
 aura_env.APLName = "夜雨恶魔术"

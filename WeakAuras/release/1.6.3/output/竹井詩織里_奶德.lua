@@ -42,6 +42,7 @@ function (event, ...)
     end
     return true
 end
+
 -- UNIT_SPELLCAST_SENT,UNIT_SPELLCAST_SUCCEEDED,UNIT_SPELLCAST_FAILED,UNIT_SPELLCAST_INTERRUPTED
 
 -- ===== actions.init 自定义代码 =====
@@ -62,6 +63,7 @@ local S = {
     LB = 48451, -- 生命绽放 (Lifebloom)
     BARKSKIN = 1283513 -- 树皮术 (Barkskin)
 }
+
 local SKey = {
     REJUV = "REJUV", -- 回春术 (Rejuvenation)
     WG = "WG", -- 野性成长 (Wild Growth)
@@ -72,6 +74,7 @@ local SKey = {
     LB = "LB", -- 生命绽放 (Lifebloom)
     BARKSKIN = "BARKSKIN" -- 树皮术 (Barkskin)
 }
+
 local C = {
     wildGrowthHealthDiff = 0, -- 野性成长缺口 || 调整掉血多少可以释放野性成长，如果你不想卡CD丢野性成长，配置一下这个选项
     swiftmendHealthDiff = 8000, -- 小迅捷缺口 || 调整掉血多少可以释放迅捷治愈
@@ -89,11 +92,13 @@ local C = {
     healerSupport40Battleground = true, -- 支持40人战场 || 这个选项会增加raid26-raid40的单位宏，增加内存占用，如果你不打战场或者打小型战场，建议关闭这个选项
     supportSpecialDebuff = false -- 支持特殊Debuff || 这个选项会增加对一些TOC和ICC特殊Debuff的检查，增加CPU占用，如果你不打这些副本，建议关闭这个选项
 }
+
 if aura_env.config then
     for k, v in pairs(aura_env.config) do
         C[k] = v
     end
 end
+
 local DebuffTable = {
     [66331] = true, -- 穿刺
     [66406] = true, -- 狗头人上身
@@ -143,16 +148,19 @@ local DebuffTable = {
     [68980] = true, -- 收割灵魂
     [72754] = true -- 污染 
 }
+
 local function spellName(id, fallback)
     local name = GetSpellInfo(id)
     return name or fallback
 end
+
 _G.ShioriDruidLastCastUnits = _G.ShioriDruidLastCastUnits or {
     LastCastNourishUnit = "",
     LastCastRegrowthUnit = "",
     NourishGUID = "",
     RegrowthGUID = ""
 }
+
 local spellNames = {}
 spellNames.REJUV = spellName(S.REJUV, "回春术")
 spellNames.WG = spellName(S.WG, "野性成长")
@@ -162,17 +170,21 @@ spellNames.REGROWTH = spellName(S.REGROWTH, "愈合")
 spellNames.HT = spellName(S.HT, "治疗之触")
 spellNames.LB = spellName(S.LB, "生命绽放")
 spellNames.BARKSKIN = spellName(S.BARKSKIN, "树皮术")
+
 local units = {"player"}
 for i = 1, 4 do
     table.insert(units, "party" .. i)
 end
+
 for i = 1, (C.healerSupport40Battleground and 40 or 25) do
     table.insert(units, "raid" .. i)
 end
+
 local initializedId = 8080000
 local actionIds = {}
 local actionList = {}
 local recent = {}
+
 local function addUnitMacro(key, spellId, macroSpellName, unit, iconId)
     actionIds[key] = actionIds[key] or {}
     local id = initializedId + (#actionList + 1)
@@ -180,6 +192,7 @@ local function addUnitMacro(key, spellId, macroSpellName, unit, iconId)
     table.insert(actionList, {id, "macro", "/cast [@" .. unit .. ",help,nodead] " .. macroSpellName,
             iconId or GetSpellTexture(spellId)})
 end
+
 for _, unit in ipairs(units) do
     addUnitMacro(SKey.REJUV, S.REJUV, spellNames.REJUV, unit)
     addUnitMacro(SKey.WG, S.WG, spellNames.WG, unit)
@@ -193,8 +206,10 @@ for _, unit in ipairs(units) do
     addUnitMacro(SKey.REGROWTH, S.REGROWTH, spellNames.REGROWTH, unit)
     addUnitMacro(SKey.BARKSKIN, S.BARKSKIN, spellNames.BARKSKIN, unit)
 end
+
 actionIds.NOOP = initializedId + 200000
 table.insert(actionList, {actionIds.NOOP, "macro", "/stopmacro", GetSpellTexture(33883)})
+
 local function hasBuff(unit, spellId, fallbackName, isFromPlayer)
     local expectedName = GetSpellInfo(spellId) or fallbackName
     if not expectedName or expectedName == "" then
@@ -208,6 +223,7 @@ local function hasBuff(unit, spellId, fallbackName, isFromPlayer)
     end
     return hasBuff
 end
+
 local function hasDebuff(unit, spellId, fallbackName, isFromPlayer)
     local expectedName = GetSpellInfo(spellId) or fallbackName
     if not expectedName or expectedName == "" then
@@ -221,6 +237,7 @@ local function hasDebuff(unit, spellId, fallbackName, isFromPlayer)
     end
     return hasDebuff
 end
+
 local function spellReady(spellId)
     local start, duration, enabled = GetSpellCooldown(spellId)
     if enabled == 0 then
@@ -238,6 +255,7 @@ local function spellReady(spellId)
     end
     return true
 end
+
 local function inRange(unit, spellId)
     if unit == "player" then
         if UnitIsDeadOrGhost(unit) then
@@ -263,9 +281,11 @@ local function inRange(unit, spellId)
     end
     return true
 end
+
 local function isMoving()
     return GetUnitSpeed("player") > 0
 end
+
 local function unitHasTOCDebuff(unit)
     if C.supportSpecialDebuff == false then
         return false
@@ -285,6 +305,7 @@ end
 local function unitHasIncinerateFleshDebuff(unit)
     return hasDebuff(unit, 66237, "血肉成灰", false)
 end
+
 local function getUnitRoleType(unit, maxUnit, unitHealthMax)
     local _, class = UnitClass(unit)
     local powerType = UnitPowerType(unit)
@@ -327,6 +348,7 @@ local function getUnitRoleType(unit, maxUnit, unitHealthMax)
     end
     return Role
 end
+
 local function calcUnitHealthDiff(unit, unitHealthMax)
     if not UnitExists(unit) then
         return 0
@@ -348,9 +370,11 @@ local function calcUnitHealthDiff(unit, unitHealthMax)
     end
     return unitHealthDiff
 end
+
 local function wildGrowthUsable(unitHealthDiff)
     return unitHealthDiff >= C.wildGrowthHealthDiff
 end
+
 local function barkskinUsable(unit, unitHealthMax, unitHealthDiff)
     if (not unitHealthMax or unitHealthMax <= 0) or C.autoBarkskinHealthPercent == nil or C.autoBarkskinHealthPercent <= 0 then
         return false
@@ -358,11 +382,13 @@ local function barkskinUsable(unit, unitHealthMax, unitHealthDiff)
     local unitHealthPercent = (unitHealthMax - unitHealthDiff) / unitHealthMax * 100
     return spellReady(S.BARKSKIN) and unitHealthPercent <= C.autoBarkskinHealthPercent
 end
+
 local function swiftmendUsable(unit, unitHealthDiff)
     -- 判断unit身上存在回春术或者愈合
     local hasRejuvenationOrRegrowth = hasBuff(unit, S.REJUV, "回春术", false) or hasBuff(unit, S.REGROWTH, "愈合", false)
     return hasRejuvenationOrRegrowth and unitHealthDiff >= C.swiftmendHealthDiff
 end
+
 local function rejuvenationOrLifebloomUsable(unit, forceUseLifebloom)
     forceUseLifebloom = forceUseLifebloom or false
     local needReplace = C.replaceRejuvenationWithLifebloom or forceUseLifebloom
@@ -371,6 +397,7 @@ local function rejuvenationOrLifebloomUsable(unit, forceUseLifebloom)
     local hasPlayerRejuvenationOrLifebloom = hasBuff(unit, castId, castName, C.onlyCheckSelfHot)
     return not hasPlayerRejuvenationOrLifebloom
 end
+
 local function checkUnitHasPowerWordShield(unit)
     local hasBuff = false
     if C.ignorePowerWordShield then
@@ -380,9 +407,11 @@ local function checkUnitHasPowerWordShield(unit)
     end
     return hasBuff
 end
+
 local function nourishOrHealingTouchUsable(unitHealthDiff)
     return unitHealthDiff >= C.nourishHealthDiff
 end
+
 local function regrowthUsable(unit, unitHealthDiff)
     local hasPlayerRegrowth = hasBuff(unit, S.REGROWTH, "愈合", C.onlyCheckSelfHot)
     return not hasPlayerRegrowth and unitHealthDiff >= C.regrowthHealthDiff
@@ -394,12 +423,14 @@ local function action(key, unit)
     end
     return actionIds[key]
 end
+
 local function doFinalCheck(unit, spellKey)
     if unit == "" or spellKey == "" then
         return action("NOOP")
     end
     return action(spellKey, unit)
 end
+
 local function runSolo()
     local unit = "player"
     if not inRange(unit, S.REJUV) then
@@ -435,6 +466,7 @@ local function runSolo()
     end
     return doFinalCheck(unit, spellKey)
 end
+
 local function runParty()
     -- 处理小队 判断T的位置，判断全队血量是否有少8000且能用迅捷治愈，如果有，优先使用迅捷治愈，随后判断是否可以释放野性成长，可以，优先给T，如果T超过距离，优先给自己
     -- 如果上述都不行，则判断回春术是否可以施放，如果可以，施放回春术，也是优先给T，随后其他人 
@@ -595,6 +627,7 @@ local function runParty()
     
     return doFinalCheck(unitToCast, spellKey)
 end
+
 local function runRaid()
     local selfInRaidUnit = ""
     local maxRaidHealthPlayerUnit = ""
@@ -877,6 +910,7 @@ local function runRaid()
     return doFinalCheck(unitToCast, spellKey)
     
 end
+
 local function callbackHealer()
     if select(2, UnitClass("player")) ~= "DRUID" then
         return action("NOOP")
@@ -889,6 +923,7 @@ local function callbackHealer()
     end
     return runRaid()
 end
+
 --粗糙的性能优化，可能会导致非GCD技能延后
 local lastActionID = 0
 local lastTime = 0
@@ -902,6 +937,7 @@ local function APLCallback()
     end
     return lastActionID
 end
+
 aura_env.APLActionList = actionList
 aura_env.APLCallback = APLCallback
 aura_env.APLName = "竹井詩織里"
